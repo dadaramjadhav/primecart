@@ -25,7 +25,7 @@ public class Order {
     private String orderNumber;
 
     @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    private String customerId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

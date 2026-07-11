@@ -18,7 +18,7 @@ public interface OrderService {
 
     Page<OrderResponse> getAllOrders(Pageable pageable);
 
-    List<OrderResponse> getOrdersByCustomerId(Long customerId);
+    List<OrderResponse> getOrdersByCustomerId(String customerId);
 
     Page<OrderResponse> getOrdersByStatus(OrderStatus status, Pageable pageable);
 

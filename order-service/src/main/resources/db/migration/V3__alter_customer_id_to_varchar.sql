@@ -1,0 +1,2 @@
+ALTER TABLE orders
+    MODIFY COLUMN customer_id VARCHAR(100) NOT NULL;

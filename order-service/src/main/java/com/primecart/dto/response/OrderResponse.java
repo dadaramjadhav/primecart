@@ -20,7 +20,7 @@ public class OrderResponse {
 
     private String orderNumber;
 
-    private Long customerId;
+    private String customerId;
 
     private OrderStatus status;
 
