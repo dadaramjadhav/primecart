@@ -1,5 +1,6 @@
 package com.primecart.controller;
 
+import com.primecart.dto.request.CreateInventoryRequest;
 import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.request.UpdateStockRequest;
 import com.primecart.dto.response.InventoryResponse;
@@ -22,7 +23,6 @@ public class InventoryController {
         return ResponseEntity.ok(
                 inventoryService.getInventory(productId)
         );
-
     }
 
     @PutMapping("/{productId}/increase")
@@ -36,7 +36,6 @@ public class InventoryController {
                         request
                 )
         );
-
     }
 
     @PutMapping("/{productId}/decrease")
@@ -50,7 +49,15 @@ public class InventoryController {
                         request
                 )
         );
+    }
 
+    @PostMapping
+    public ResponseEntity<InventoryResponse> createInventory(
+            @RequestBody CreateInventoryRequest request) {
+
+        return ResponseEntity.ok(
+                inventoryService.createInventory(request)
+        );
     }
 
     @PostMapping("/reserve")
@@ -60,7 +67,6 @@ public class InventoryController {
         inventoryService.reserveStock(request);
 
         return ResponseEntity.ok().build();
-
     }
 
     @PostMapping("/release")
@@ -70,7 +76,14 @@ public class InventoryController {
         inventoryService.releaseStock(request);
 
         return ResponseEntity.ok().build();
-
     }
 
+    @PostMapping("/confirm")
+    public ResponseEntity<Void> confirmStock(
+            @RequestBody ReserveStockRequest request) {
+
+        inventoryService.confirmStock(request);
+
+        return ResponseEntity.ok().build();
+    }
 }

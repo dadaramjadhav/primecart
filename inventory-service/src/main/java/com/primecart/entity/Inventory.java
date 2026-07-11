@@ -9,48 +9,27 @@ import java.time.LocalDateTime;
 @Table(name = "inventory")
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Inventory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "product_id", nullable = false, unique = true)
     private Long productId;
 
-    @Column(nullable = false)
+    @Column(name = "available_quantity", nullable = false)
     private Integer availableQuantity;
 
-    @Column(nullable = false)
+    @Column(name = "reserved_quantity", nullable = false)
     private Integer reservedQuantity;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    public void create() {
-
-        LocalDateTime now = LocalDateTime.now();
-
-        createdAt = now;
-        updatedAt = now;
-
-        if (reservedQuantity == null) {
-            reservedQuantity = 0;
-        }
-    }
-
-    @PreUpdate
-    public void update() {
-
-        updatedAt = LocalDateTime.now();
-
-    }
-
 }

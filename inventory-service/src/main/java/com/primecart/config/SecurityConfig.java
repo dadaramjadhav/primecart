@@ -33,6 +33,9 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/inventory")
+                        .hasRole("ADMIN")
+
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**")
                         .hasAnyRole("USER", "ADMIN")
 

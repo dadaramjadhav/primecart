@@ -1,5 +1,6 @@
 package com.primecart.service;
 
+import com.primecart.dto.request.CreateInventoryRequest;
 import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.request.UpdateStockRequest;
 import com.primecart.dto.response.InventoryResponse;
@@ -9,6 +10,8 @@ import com.primecart.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -69,7 +72,6 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.save(inventory);
 
         return mapToResponse(inventory);
-
     }
 
     @Override
@@ -85,7 +87,6 @@ public class InventoryServiceImpl implements InventoryService {
             throw new RuntimeException(
                     "Not enough stock available"
             );
-
         }
 
         inventory.setAvailableQuantity(
@@ -99,7 +100,6 @@ public class InventoryServiceImpl implements InventoryService {
         );
 
         inventoryRepository.save(inventory);
-
     }
 
     @Override
@@ -115,7 +115,6 @@ public class InventoryServiceImpl implements InventoryService {
             throw new RuntimeException(
                     "Invalid release quantity"
             );
-
         }
 
         inventory.setReservedQuantity(
@@ -129,7 +128,6 @@ public class InventoryServiceImpl implements InventoryService {
         );
 
         inventoryRepository.save(inventory);
-
     }
 
     private Inventory getInventoryEntity(Long productId) {
@@ -141,7 +139,6 @@ public class InventoryServiceImpl implements InventoryService {
                                 "Inventory not found for product "
                                         + productId
                         ));
-
     }
 
     private InventoryResponse mapToResponse(
@@ -162,7 +159,57 @@ public class InventoryServiceImpl implements InventoryService {
                                 )
 
                                 .build();
-
     }
 
+    @Override
+    @Transactional
+    public InventoryResponse createInventory(
+            CreateInventoryRequest request) {
+
+        if (inventoryRepository.existsByProductId(
+                request.getProductId())) {
+
+            throw new RuntimeException(
+                    "Inventory already exists for product "
+                            + request.getProductId()
+            );
+        }
+
+        Inventory inventory = Inventory.builder()
+                                       .productId(request.getProductId())
+                                       .availableQuantity(
+                                               request.getAvailableQuantity()
+                                       )
+                                       .reservedQuantity(0)
+                                       .createdAt(LocalDateTime.now())
+                                       .updatedAt(LocalDateTime.now())
+                                       .build();
+
+        Inventory saved =
+                inventoryRepository.save(inventory);
+
+        return mapToResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void confirmStock(ReserveStockRequest request) {
+
+        Inventory inventory = inventoryRepository
+                .findByProductId(request.getProductId())
+                .orElseThrow(() ->
+                        new RuntimeException("Inventory not found"));
+
+        if (inventory.getReservedQuantity() < request.getQuantity()) {
+            throw new RuntimeException("Not enough reserved stock");
+        }
+
+        inventory.setAvailableQuantity(
+                inventory.getAvailableQuantity() - request.getQuantity());
+
+        inventory.setReservedQuantity(
+                inventory.getReservedQuantity() - request.getQuantity());
+
+        inventoryRepository.save(inventory);
+    }
 }

@@ -1,5 +1,6 @@
 package com.primecart.service;
 
+import com.primecart.dto.request.CreateInventoryRequest;
 import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.request.UpdateStockRequest;
 import com.primecart.dto.response.InventoryResponse;
@@ -17,4 +18,8 @@ public interface InventoryService {
     void reserveStock(ReserveStockRequest request);
 
     void releaseStock(ReserveStockRequest request);
+
+    InventoryResponse createInventory(CreateInventoryRequest request);
+
+    void confirmStock(ReserveStockRequest request);
 }

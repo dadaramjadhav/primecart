@@ -10,4 +10,5 @@ public interface InventoryRepository
 
     Optional<Inventory> findByProductId(Long productId);
 
+    boolean existsByProductId(Long productId);
 }
