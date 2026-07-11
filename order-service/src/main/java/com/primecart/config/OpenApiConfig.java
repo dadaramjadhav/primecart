@@ -17,12 +17,12 @@ public class OpenApiConfig {
     private static final String securitySchemeName = "bearerAuth";
 
     @Bean
-    public OpenAPI primeCartOpenAPI() {
+    public OpenAPI primeCartOrderOpenAPI() {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("PrimeCart Product Service API")
-                        .description("REST APIs for managing products, categories, and brands.")
+                        .title("PrimeCart Order Service API")
+                        .description("REST APIs for managing orders, order items, order status, and order processing.")
                         .version("v1.0")
                         .contact(new Contact()
                                 .name("PrimeCart Team")
@@ -31,7 +31,7 @@ public class OpenApiConfig {
                                 .name("Apache 2.0")
                                 .url("https://www.apache.org/licenses/LICENSE-2.0")))
 
-                // JWT Security Configuration
+                // JWT Bearer Authentication
                 .components(new Components()
                         .addSecuritySchemes(
                                 securitySchemeName,
@@ -42,7 +42,7 @@ public class OpenApiConfig {
                                         .bearerFormat("JWT")
                         ))
 
-                // Apply JWT authentication globally to APIs
+                // Apply JWT authentication globally
                 .addSecurityItem(
                         new SecurityRequirement()
                                 .addList(securitySchemeName)

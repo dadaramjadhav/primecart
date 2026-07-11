@@ -1,7 +1,6 @@
 package com.primecart.config;
 
 import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
@@ -14,42 +13,31 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String securitySchemeName = "bearerAuth";
-
     @Bean
-    public OpenAPI primeCartOpenAPI() {
+    public OpenAPI customOpenAPI() {
+
+        final String securitySchemeName = "bearerAuth";
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("PrimeCart Product Service API")
-                        .description("REST APIs for managing products, categories, and brands.")
-                        .version("v1.0")
+                        .title("PrimeCart Cart Service API")
+                        .version("1.0")
+                        .description("REST API for Cart Service")
                         .contact(new Contact()
-                                .name("PrimeCart Team")
+                                .name("PrimeCart")
                                 .email("support@primecart.com"))
                         .license(new License()
-                                .name("Apache 2.0")
-                                .url("https://www.apache.org/licenses/LICENSE-2.0")))
-
-                // JWT Security Configuration
+                                .name("Apache 2.0")))
                 .components(new Components()
-                        .addSecuritySchemes(
-                                securitySchemeName,
+                        .addSecuritySchemes(securitySchemeName,
                                 new SecurityScheme()
                                         .name(securitySchemeName)
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
-                                        .bearerFormat("JWT")
-                        ))
-
-                // Apply JWT authentication globally to APIs
+                                        .bearerFormat("JWT")))
                 .addSecurityItem(
                         new SecurityRequirement()
                                 .addList(securitySchemeName)
-                )
-
-                .externalDocs(new ExternalDocumentation()
-                        .description("PrimeCart Documentation")
-                        .url("https://github.com/your-username/primecart"));
+                );
     }
 }

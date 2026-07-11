@@ -26,35 +26,45 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
 
+                        .pathMatchers("/debug").authenticated()
+
                         // Product Service
-                        .pathMatchers(HttpMethod.GET, "/api/products/**")
-                        .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/products/**")
-                        .hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/products/**")
-                        .hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/products/**")
-                        .hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
                         // Order Service
-                        .pathMatchers(HttpMethod.POST, "/api/orders/**")
-                        .hasRole("USER")
+                        .pathMatchers(HttpMethod.POST, "/api/orders/**").hasRole("USER")
 
-                        .pathMatchers(HttpMethod.GET, "/api/orders/**")
-                        .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/orders/**")
-                        .hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/orders/**")
-                        .hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
 
-                        // Everything else requires authentication
-                        .anyExchange()
-                        .authenticated()
+                        // Cart Service
+                        .pathMatchers(HttpMethod.GET, "/api/cart/**").hasAnyRole("USER", "ADMIN")
+
+                        .pathMatchers(HttpMethod.POST, "/api/cart/**").hasRole("USER")
+
+                        .pathMatchers(HttpMethod.PUT, "/api/cart/**").hasRole("USER")
+
+                        .pathMatchers(HttpMethod.DELETE, "/api/cart/**").hasRole("USER")
+
+                        // Inventory Service APIs
+                        .pathMatchers(HttpMethod.GET, "/api/inventory/**").hasAnyRole("USER", "ADMIN")
+
+                        .pathMatchers(HttpMethod.POST, "/api/inventory/**").hasRole("ADMIN")
+
+                        .pathMatchers(HttpMethod.PUT, "/api/inventory/**").hasRole("ADMIN")
+
+                        .pathMatchers(HttpMethod.DELETE, "/api/inventory/**").hasRole("ADMIN")
+
+                        .anyExchange().authenticated()
                 )
 
                 .oauth2ResourceServer(oauth -> oauth
