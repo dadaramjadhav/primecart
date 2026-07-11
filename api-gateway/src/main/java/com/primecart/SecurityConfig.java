@@ -20,13 +20,15 @@ public class SecurityConfig {
 
                         // Public endpoints
                         .pathMatchers(
+                                "/auth/token",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/actuator/**"
                         ).permitAll()
+                        .pathMatchers("/dev/token").permitAll()
 
-                        .pathMatchers("/debug").authenticated()
+                        .pathMatchers("/debug").permitAll()
 
                         // Product Service
                         .pathMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("USER", "ADMIN")
@@ -58,12 +60,21 @@ public class SecurityConfig {
                         // Inventory Service APIs
                         .pathMatchers(HttpMethod.GET, "/api/inventory/**").hasAnyRole("USER", "ADMIN")
 
+                        .pathMatchers(HttpMethod.POST, "/api/inventory").hasRole("ADMIN")
+
                         .pathMatchers(HttpMethod.POST, "/api/inventory/**").hasRole("ADMIN")
 
                         .pathMatchers(HttpMethod.PUT, "/api/inventory/**").hasRole("ADMIN")
 
                         .pathMatchers(HttpMethod.DELETE, "/api/inventory/**").hasRole("ADMIN")
 
+                        .pathMatchers(HttpMethod.GET, "/api/payments/**").hasAnyRole("USER", "ADMIN")
+
+                        .pathMatchers(HttpMethod.POST, "/api/payments/**").hasRole("USER")
+
+                        .pathMatchers(HttpMethod.PUT, "/api/payments/**").hasRole("ADMIN")
+
+                        .pathMatchers(HttpMethod.DELETE, "/api/payments/**").hasRole("ADMIN")
                         .anyExchange().authenticated()
                 )
 

@@ -1,5 +1,6 @@
 package com.primecart.service;
 
+import com.primecart.client.OrderClient;
 import com.primecart.dto.request.CreatePaymentRequest;
 import com.primecart.dto.response.PaymentResponse;
 import com.primecart.entity.Payment;
@@ -8,6 +9,8 @@ import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.mapper.PaymentMapper;
 import com.primecart.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,17 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final OrderClient orderClient;
+
+    private String getCurrentUserId() {
+
+        Jwt jwt = (Jwt) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        return jwt.getSubject();
+    }
 
     @Override
     public PaymentResponse createPayment(CreatePaymentRequest request) {
@@ -27,7 +41,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = Payment.builder()
                                  .paymentNumber(generatePaymentNumber())
                                  .orderId(request.getOrderId())
-                                 .customerId(request.getCustomerId())
+                                 .customerId(getCurrentUserId())
                                  .amount(request.getAmount())
                                  .method(request.getMethod())
                                  .status(PaymentStatus.PENDING)
@@ -63,16 +77,20 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentResponse markSuccess(Long id) {
 
-        Payment payment = paymentRepository.findById(id)
-                                           .orElseThrow(() ->
-                                                   new ResourceNotFoundException("Payment not found"));
-
+        Payment payment =
+                paymentRepository.findById(id)
+                                 .orElseThrow(() ->
+                                         new ResourceNotFoundException(
+                                                 "Payment not found"));
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setTransactionId(UUID.randomUUID().toString());
 
-        return paymentMapper.toResponse(
-                paymentRepository.save(payment)
-        );
+        Payment saved = paymentRepository.save(payment);
+
+        // notify order service
+//        orderClient.confirmOrder(payment.getOrderId());
+        orderClient.paymentSuccess(payment.getOrderId());
+        return paymentMapper.toResponse(saved);
     }
 
     @Override
@@ -92,5 +110,10 @@ public class PaymentServiceImpl implements PaymentService {
     private String generatePaymentNumber() {
 
         return "PAY-" + System.currentTimeMillis();
+    }
+
+    private String generateTransactionId() {
+
+        return UUID.randomUUID().toString();
     }
 }

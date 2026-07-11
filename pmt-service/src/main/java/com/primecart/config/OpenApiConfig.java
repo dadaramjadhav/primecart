@@ -21,8 +21,8 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("PrimeCart Order Service API")
-                        .description("REST APIs for managing orders, order items, order status, and order processing.")
+                        .title("PrimeCart Payment Service API")
+                        .description("REST APIs for managing payment")
                         .version("v1.0")
                         .contact(new Contact()
                                 .name("PrimeCart Team")

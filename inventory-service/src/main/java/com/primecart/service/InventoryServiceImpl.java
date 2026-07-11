@@ -75,11 +75,9 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public void reserveStock(
-            ReserveStockRequest request) {
+    public void reserveStock(ReserveStockRequest request) {
 
-        Inventory inventory =
-                getInventoryEntity(request.getProductId());
+        Inventory inventory = getInventoryEntity(request.getProductId());
 
         if (inventory.getAvailableQuantity()
                 < request.getQuantity()) {
@@ -89,15 +87,9 @@ public class InventoryServiceImpl implements InventoryService {
             );
         }
 
-        inventory.setAvailableQuantity(
-                inventory.getAvailableQuantity()
-                        - request.getQuantity()
-        );
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - request.getQuantity());
 
-        inventory.setReservedQuantity(
-                inventory.getReservedQuantity()
-                        + request.getQuantity()
-        );
+        inventory.setReservedQuantity(inventory.getReservedQuantity() + request.getQuantity());
 
         inventoryRepository.save(inventory);
     }
@@ -195,20 +187,25 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     public void confirmStock(ReserveStockRequest request) {
 
-        Inventory inventory = inventoryRepository
-                .findByProductId(request.getProductId())
-                .orElseThrow(() ->
-                        new RuntimeException("Inventory not found"));
+        Inventory inventory =
+                inventoryRepository
+                        .findByProductId(request.getProductId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Inventory not found"));
 
-        if (inventory.getReservedQuantity() < request.getQuantity()) {
-            throw new RuntimeException("Not enough reserved stock");
+        if (inventory.getReservedQuantity()
+                < request.getQuantity()) {
+
+            throw new RuntimeException(
+                    "Not enough reserved stock");
         }
 
-        inventory.setAvailableQuantity(
-                inventory.getAvailableQuantity() - request.getQuantity());
-
+        // only remove reservation
         inventory.setReservedQuantity(
-                inventory.getReservedQuantity() - request.getQuantity());
+                inventory.getReservedQuantity()
+                        - request.getQuantity()
+        );
 
         inventoryRepository.save(inventory);
     }

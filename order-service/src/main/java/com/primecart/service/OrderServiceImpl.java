@@ -2,7 +2,10 @@ package com.primecart.service;
 
 import com.primecart.client.CartClient;
 import com.primecart.client.InventoryClient;
+import com.primecart.client.PaymentClient;
 import com.primecart.client.ProductClient;
+import com.primecart.dto.request.CreatePaymentRequest;
+import com.primecart.dto.request.PaymentMethod;
 import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.response.CartItemResponse;
 import com.primecart.dto.response.CartResponse;
@@ -41,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryClient inventoryClient;
     private final ProductClient productClient;
     private final CartClient cartClient;
+    private final PaymentClient paymentClient;
 
     /**
      * Logged-in customer.
@@ -124,17 +128,28 @@ public class OrderServiceImpl implements OrderService {
         //-------------------------------------------------------------
         order.setTotalAmount(totalAmount);
 
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder =
+                orderRepository.save(order);
 
+        CreatePaymentRequest paymentRequest =
+                CreatePaymentRequest.builder()
+                                    .orderId(savedOrder.getId())
+                                    .amount(savedOrder.getTotalAmount())
+                                    .method(PaymentMethod.CARD)
+                                    .build();
+
+        paymentClient.createPayment(paymentRequest);
+
+//        savedOrder.setStatus(OrderStatus.CREATED);
         log.info("Order {} created successfully",
                 savedOrder.getOrderNumber());
-
         //-------------------------------------------------------------
         // Clear Cart
         //-------------------------------------------------------------
         cartClient.clearCart();
-
-        return OrderResponse.from(savedOrder);
+        return mapToResponse(
+                orderRepository.save(savedOrder)
+        );
     }
 
     /**
@@ -384,6 +399,45 @@ public class OrderServiceImpl implements OrderService {
         return mapToResponse(updatedOrder);
     }
 
+    @Override
+    @Transactional
+    public OrderResponse confirmOrder(Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                                     .orElseThrow(() ->
+                                             new RuntimeException("Order not found"));
+
+        // Verify owner
+        if (!order.getCustomerId().equals(getCurrentUserId())) {
+            throw new RuntimeException(
+                    "You are not authorized to confirm this order");
+        }
+
+        // Only CREATED orders can be confirmed
+        if (order.getStatus() != OrderStatus.CREATED) {
+            throw new RuntimeException(
+                    "Only CREATED orders can be confirmed");
+        }
+
+        // Confirm stock for every item
+        for (OrderItem item : order.getItems()) {
+
+            ReserveStockRequest request = new ReserveStockRequest();
+
+            request.setProductId(item.getProductId());
+            request.setQuantity(item.getQuantity());
+
+            inventoryClient.confirmStock(request);
+        }
+
+        // Update order status
+        order.setStatus(OrderStatus.CONFIRMED);
+
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapToResponse(updatedOrder);
+    }
+
     private OrderResponse mapToResponse(Order order) {
 
         List<OrderItemResponse> items =
@@ -409,5 +463,76 @@ public class OrderServiceImpl implements OrderService {
                             .items(items)
                             .createdAt(order.getCreatedAt())
                             .build();
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse paymentFailed(Long orderId) {
+
+        Order order =
+                orderRepository.findById(orderId)
+                               .orElseThrow(() ->
+                                       new OrderNotFoundException(
+                                               "Order not found"));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            return mapToResponse(order);
+        }
+
+        // Release inventory
+        for (OrderItem item : order.getItems()) {
+
+            ReserveStockRequest request =
+                    new ReserveStockRequest(
+                            item.getProductId(),
+                            item.getQuantity()
+                    );
+
+            inventoryClient.releaseStock(request);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+
+        return mapToResponse(
+                orderRepository.save(order)
+        );
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse paymentSuccess(Long orderId) {
+
+        Order order =
+                orderRepository.findById(orderId)
+                               .orElseThrow(() ->
+                                       new OrderNotFoundException(
+                                               "Order not found"));
+
+        if (order.getStatus() != OrderStatus.CREATED) {
+
+            throw new RuntimeException(
+                    "Invalid order status"
+            );
+        }
+
+        // confirm inventory
+        for (OrderItem item : order.getItems()) {
+
+            ReserveStockRequest request =
+                    new ReserveStockRequest(
+                            item.getProductId(),
+                            item.getQuantity()
+                    );
+
+            inventoryClient.confirmStock(request);
+        }
+
+        order.setStatus(
+                OrderStatus.CONFIRMED
+        );
+
+        return orderMapper.toResponse(
+                orderRepository.save(order)
+        );
     }
 }

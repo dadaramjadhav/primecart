@@ -105,4 +105,31 @@ public class OrderController {
                 orderService.cancelOrder(id)
         );
     }
+
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<OrderResponse> confirmOrder(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                orderService.confirmOrder(id)
+        );
+    }
+
+    @PutMapping("/{orderId}/payment-failed")
+    public ResponseEntity<OrderResponse> paymentFailed(
+            @PathVariable Long orderId) {
+
+        return ResponseEntity.ok(
+                orderService.paymentFailed(orderId)
+        );
+    }
+
+    @PutMapping("/{orderId}/payment-success")
+    public ResponseEntity<OrderResponse> paymentSuccess(
+            @PathVariable Long orderId) {
+
+        return ResponseEntity.ok(
+                orderService.paymentSuccess(orderId)
+        );
+    }
 }

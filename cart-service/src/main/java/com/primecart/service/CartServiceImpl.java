@@ -8,8 +8,7 @@ import com.primecart.dto.response.CartResponse;
 import com.primecart.dto.response.ProductResponse;
 import com.primecart.entity.Cart;
 import com.primecart.entity.CartItem;
-import com.primecart.exception.CartItemNotFoundException;
-import com.primecart.exception.CartNotFoundException;
+import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.repository.CartItemRepository;
 import com.primecart.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,15 +33,15 @@ public class CartServiceImpl implements CartService {
     public CartResponse getCart(String userId) {
 
         Cart cart = cartRepository.findByUserId(userId)
-                .orElse(null);
+                                  .orElse(null);
 
         if (cart == null) {
             return CartResponse.builder()
-                    .cartId(null)
-                    .userId(userId)
-                    .items(List.of())
-                    .totalAmount(BigDecimal.ZERO)
-                    .build();
+                               .cartId(null)
+                               .userId(userId)
+                               .items(List.of())
+                               .totalAmount(BigDecimal.ZERO)
+                               .build();
         }
 
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
@@ -56,7 +55,7 @@ public class CartServiceImpl implements CartService {
 
         // Get existing cart or create a new one
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseGet(() -> createCart(userId));
+                                  .orElseGet(() -> createCart(userId));
 
         // Validate product via Product Service
         ProductResponse product = getProduct(request.getProductId());
@@ -76,21 +75,20 @@ public class CartServiceImpl implements CartService {
                     cartItem.getPrice()
                             .multiply(BigDecimal.valueOf(newQuantity))
             );
-
         } else {
 
             // Create a new cart item
             cartItem = CartItem.builder()
-                    .cart(cart)
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .price(product.getPrice())
-                    .quantity(request.getQuantity())
-                    .subtotal(
-                            product.getPrice()
-                                    .multiply(BigDecimal.valueOf(request.getQuantity()))
-                    )
-                    .build();
+                               .cart(cart)
+                               .productId(product.getId())
+                               .productName(product.getName())
+                               .price(product.getPrice())
+                               .quantity(request.getQuantity())
+                               .subtotal(
+                                       product.getPrice()
+                                              .multiply(BigDecimal.valueOf(request.getQuantity()))
+                               )
+                               .build();
         }
 
         cartItemRepository.save(cartItem);
@@ -153,8 +151,8 @@ public class CartServiceImpl implements CartService {
     private Cart createCart(String userId) {
 
         Cart cart = Cart.builder()
-                .userId(userId)
-                .build();
+                        .userId(userId)
+                        .build();
 
         return cartRepository.save(cart);
     }
@@ -174,37 +172,37 @@ public class CartServiceImpl implements CartService {
         }
 
         return CartResponse.builder()
-                .cartId(cart.getId())
-                .userId(cart.getUserId())
-                .items(items)
-                .totalAmount(total)
-                .build();
+                           .cartId(cart.getId())
+                           .userId(cart.getUserId())
+                           .items(items)
+                           .totalAmount(total)
+                           .build();
     }
 
     private CartItemResponse toResponse(CartItem item) {
 
         return CartItemResponse.builder()
-                .id(item.getId())
-                .productId(item.getProductId())
-                .productName(item.getProductName())
-                .price(item.getPrice())
-                .quantity(item.getQuantity())
-                .subtotal(item.getSubtotal())
-                .build();
+                               .id(item.getId())
+                               .productId(item.getProductId())
+                               .productName(item.getProductName())
+                               .price(item.getPrice())
+                               .quantity(item.getQuantity())
+                               .subtotal(item.getSubtotal())
+                               .build();
     }
 
     private Cart getCartByUser(String userId) {
 
         return cartRepository.findByUserId(userId)
-                .orElseThrow(() ->
-                        new CartNotFoundException("Cart not found."));
+                             .orElseThrow(() ->
+                                     new ResourceNotFoundException("Cart not found."));
     }
 
     private CartItem getCartItem(Long cartItemId) {
 
         return cartItemRepository.findById(cartItemId)
-                .orElseThrow(() ->
-                        new CartItemNotFoundException("Cart item not found."));
+                                 .orElseThrow(() ->
+                                         new ResourceNotFoundException("Cart item not found."));
     }
 
     private void validateOwnership(Cart cart,
@@ -212,7 +210,7 @@ public class CartServiceImpl implements CartService {
 
         if (!cart.getId().equals(cartItem.getCart().getId())) {
 
-            throw new RuntimeException(
+            throw new ResourceNotFoundException(
                     "Cart item does not belong to authenticated user.");
         }
     }
@@ -224,7 +222,7 @@ public class CartServiceImpl implements CartService {
 
         if (product == null || Boolean.FALSE.equals(product.getActive())) {
 
-            throw new RuntimeException("Product is not available.");
+            throw new ResourceNotFoundException("Product is not available.");
         }
 
         return product;

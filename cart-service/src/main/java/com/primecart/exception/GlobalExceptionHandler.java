@@ -1,21 +1,43 @@
 package com.primecart.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(CartItemNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handle(CartItemNotFoundException ex) {
-        return ex.getMessage();
+    private ResponseEntity<ErrorResponse> buildResponse(
+            HttpStatus status,
+            String message,
+            List<String> details) {
+
+        ErrorResponse response =
+                ErrorResponse.builder()
+                             .timestamp(LocalDateTime.now())
+                             .status(status.value())
+                             .error(status.getReasonPhrase())
+                             .message(message)
+                             .details(details)
+                             .build();
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
     }
 
-    @ExceptionHandler(CartNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handle(CartNotFoundException ex) {
-        return ex.getMessage();
-    }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException ex) {
 
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                List.of()
+        );
+    }
 }

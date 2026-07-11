@@ -18,10 +18,14 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="product-service" />
+        <module name="pmt-service" />
         <module name="cart-service" />
         <module name="order-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="payment-service123" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
@@ -29,6 +33,8 @@
       <module name="cart-service" options="-parameters" />
       <module name="inventory-service" options="-parameters" />
       <module name="order-service" options="-parameters" />
+      <module name="payment-service123" options="-parameters" />
+      <module name="pmt-service" options="-parameters" />
       <module name="product-service" options="-parameters" />
     </option>
   </component>

@@ -26,4 +26,10 @@ public interface OrderService {
     Page<OrderResponse> getMyOrders(Pageable pageable);
 
     OrderResponse cancelOrder(Long orderId);
+
+    OrderResponse confirmOrder(Long orderId);
+
+    OrderResponse paymentFailed(Long orderId);
+
+    OrderResponse paymentSuccess(Long orderId);
 }

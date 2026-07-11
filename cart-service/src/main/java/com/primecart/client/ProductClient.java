@@ -15,5 +15,4 @@ public interface ProductClient {
 
     @GetMapping("/api/products/{id}")
     ProductResponse getProductById(@PathVariable Long id);
-
 }

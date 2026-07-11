@@ -19,9 +19,6 @@ public class CreatePaymentRequest {
     @NotNull(message = "Order ID is required")
     private Long orderId;
 
-    @NotNull(message = "Customer ID is required")
-    private String customerId;
-
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
     private BigDecimal amount;

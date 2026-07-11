@@ -14,11 +14,11 @@ import com.primecart.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -39,18 +39,18 @@ public class ProductServiceImpl implements ProductService {
         log.info("Creating product: {}", request.name());
 
         Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> {
-                    log.warn("Category not found with id: {}", request.categoryId());
-                    return new ResourceNotFoundException(
-                            "Category not found with id: " + request.categoryId());
-                });
+                                              .orElseThrow(() -> {
+                                                  log.warn("Category not found with id: {}", request.categoryId());
+                                                  return new ResourceNotFoundException(
+                                                          "Category not found with id: " + request.categoryId());
+                                              });
 
         Brand brand = brandRepository.findById(request.brandId())
-                .orElseThrow(() -> {
-                    log.warn("Brand not found with id: {}", request.brandId());
-                    return new ResourceNotFoundException(
-                            "Brand not found with id: " + request.brandId());
-                });
+                                     .orElseThrow(() -> {
+                                         log.warn("Brand not found with id: {}", request.brandId());
+                                         return new ResourceNotFoundException(
+                                                 "Brand not found with id: " + request.brandId());
+                                     });
 
         Product product = productMapper.toEntity(request, category, brand);
 
@@ -67,10 +67,10 @@ public class ProductServiceImpl implements ProductService {
         log.info("Fetching product with id: {}", id);
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
-                    return new ResourceNotFoundException("Product not found with id: " + id);
-                });
+                                           .orElseThrow(() -> {
+                                               log.warn("Product not found with id: {}", id);
+                                               return new ResourceNotFoundException("Product not found with id: " + id);
+                                           });
 
         log.info("Product fetched successfully with id: {}", id);
 
@@ -88,24 +88,24 @@ public class ProductServiceImpl implements ProductService {
         log.info("Updating product with id: {}", id);
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
-                    return new ResourceNotFoundException("Product not found with id: " + id);
-                });
+                                           .orElseThrow(() -> {
+                                               log.warn("Product not found with id: {}", id);
+                                               return new ResourceNotFoundException("Product not found with id: " + id);
+                                           });
 
         Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> {
-                    log.warn("Category not found with id: {}", request.categoryId());
-                    return new ResourceNotFoundException(
-                            "Category not found with id: " + request.categoryId());
-                });
+                                              .orElseThrow(() -> {
+                                                  log.warn("Category not found with id: {}", request.categoryId());
+                                                  return new ResourceNotFoundException(
+                                                          "Category not found with id: " + request.categoryId());
+                                              });
 
         Brand brand = brandRepository.findById(request.brandId())
-                .orElseThrow(() -> {
-                    log.warn("Brand not found with id: {}", request.brandId());
-                    return new ResourceNotFoundException(
-                            "Brand not found with id: " + request.brandId());
-                });
+                                     .orElseThrow(() -> {
+                                         log.warn("Brand not found with id: {}", request.brandId());
+                                         return new ResourceNotFoundException(
+                                                 "Brand not found with id: " + request.brandId());
+                                     });
 
         productMapper.updateEntity(product, request, category, brand);
 
@@ -122,15 +122,16 @@ public class ProductServiceImpl implements ProductService {
         log.info("Deleting product with id: {}", id);
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
-                    return new ResourceNotFoundException("Product not found with id: " + id);
-                });
+                                           .orElseThrow(() -> {
+                                               log.warn("Product not found with id: {}", id);
+                                               return new ResourceNotFoundException("Product not found with id: " + id);
+                                           });
 
         productRepository.delete(product);
 
         log.info("Product deleted successfully with id: {}", id);
     }
+
     @Override
     public Page<ProductResponse> getProducts(
             Long category,
@@ -169,5 +170,4 @@ public class ProductServiceImpl implements ProductService {
 
         return productPage.map(productMapper::toResponse);
     }
-
 }

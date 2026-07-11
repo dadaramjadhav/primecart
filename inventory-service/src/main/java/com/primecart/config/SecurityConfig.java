@@ -47,7 +47,12 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.DELETE, "/api/inventory/**")
                         .hasRole("ADMIN")
-
+                        .requestMatchers(
+                                "/api/inventory/reserve",
+                                "/api/inventory/release",
+                                "/api/inventory/confirm"
+                        )
+                        .authenticated()
                         .anyRequest()
                         .authenticated()
                 )

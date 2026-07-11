@@ -22,4 +22,7 @@ public interface InventoryClient {
     void releaseStock(
             @RequestBody ReserveStockRequest request
     );
+
+    @PostMapping("/api/inventory/confirm")
+    void confirmStock(@RequestBody ReserveStockRequest request);
 }
