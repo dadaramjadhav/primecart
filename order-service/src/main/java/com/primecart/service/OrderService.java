@@ -1,6 +1,5 @@
 package com.primecart.service;
 
-import com.primecart.dto.request.CreateOrderRequest;
 import com.primecart.dto.response.OrderResponse;
 import com.primecart.entity.OrderStatus;
 import org.springframework.data.domain.Page;
@@ -10,7 +9,7 @@ import java.util.List;
 
 public interface OrderService {
 
-    OrderResponse createOrder(CreateOrderRequest request);
+    OrderResponse createOrder();
 
     OrderResponse getOrderById(Long id);
 
@@ -23,4 +22,8 @@ public interface OrderService {
     Page<OrderResponse> getOrdersByStatus(OrderStatus status, Pageable pageable);
 
     void deleteOrder(Long id);
+
+    Page<OrderResponse> getMyOrders(Pageable pageable);
+
+    OrderResponse cancelOrder(Long orderId);
 }

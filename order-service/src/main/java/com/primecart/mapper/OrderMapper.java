@@ -19,15 +19,15 @@ public class OrderMapper {
         }
 
         return OrderResponse.builder()
-                .id(order.getId())
-                .orderNumber(order.getOrderNumber())
-                .customerId(order.getCustomerId())
-                .status(order.getStatus())
-                .totalAmount(order.getTotalAmount())
-                .items(toOrderItemResponseList(order.getItems()))
-                .createdAt(order.getCreatedAt())
-                .updatedAt(order.getUpdatedAt())
-                .build();
+                            .id(order.getId())
+                            .orderNumber(order.getOrderNumber())
+                            .customerId(order.getCustomerId())
+                            .status(order.getStatus().toString())
+                            .totalAmount(order.getTotalAmount())
+                            .items(toOrderItemResponseList(order.getItems()))
+                            .createdAt(order.getCreatedAt())
+                            .updatedAt(order.getUpdatedAt())
+                            .build();
     }
 
     public List<OrderResponse> toResponseList(List<Order> orders) {
@@ -37,8 +37,8 @@ public class OrderMapper {
         }
 
         return orders.stream()
-                .map(this::toResponse)
-                .toList();
+                     .map(this::toResponse)
+                     .toList();
     }
 
     private List<OrderItemResponse> toOrderItemResponseList(List<OrderItem> items) {
@@ -48,19 +48,19 @@ public class OrderMapper {
         }
 
         return items.stream()
-                .map(this::toOrderItemResponse)
-                .toList();
+                    .map(this::toOrderItemResponse)
+                    .toList();
     }
 
     private OrderItemResponse toOrderItemResponse(OrderItem item) {
 
         return OrderItemResponse.builder()
-                .id(item.getId())
-                .productId(item.getProductId())
-                .productName(item.getProductName())
-                .price(item.getPrice())
-                .quantity(item.getQuantity())
-                .subtotal(item.getSubtotal())
-                .build();
+                                .id(item.getId())
+                                .productId(item.getProductId())
+                                .productName(item.getProductName())
+                                .price(item.getPrice())
+                                .quantity(item.getQuantity())
+                                .subtotal(item.getSubtotal())
+                                .build();
     }
 }

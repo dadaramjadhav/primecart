@@ -1,16 +1,18 @@
 package com.primecart.service;
 
+import com.primecart.client.CartClient;
 import com.primecart.client.InventoryClient;
 import com.primecart.client.ProductClient;
-import com.primecart.dto.request.CreateOrderRequest;
-import com.primecart.dto.request.OrderItemRequest;
 import com.primecart.dto.request.ReserveStockRequest;
+import com.primecart.dto.response.CartItemResponse;
+import com.primecart.dto.response.CartResponse;
 import com.primecart.dto.response.OrderItemResponse;
 import com.primecart.dto.response.OrderResponse;
-import com.primecart.dto.response.ProductResponse;
 import com.primecart.entity.Order;
 import com.primecart.entity.OrderItem;
 import com.primecart.entity.OrderStatus;
+import com.primecart.exception.CartEmptyException;
+import com.primecart.exception.InventoryReservationException;
 import com.primecart.exception.OrderNotFoundException;
 import com.primecart.mapper.OrderMapper;
 import com.primecart.repository.OrderRepository;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,112 +40,242 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final InventoryClient inventoryClient;
     private final ProductClient productClient;
+    private final CartClient cartClient;
 
+    /**
+     * Logged-in customer.
+     */
     private String getCurrentUserId() {
 
         Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
+                SecurityContextHolder.getContext()
+                                     .getAuthentication();
 
-        JwtAuthenticationToken jwtAuthenticationToken =
+        JwtAuthenticationToken token =
                 (JwtAuthenticationToken) authentication;
 
-        return jwtAuthenticationToken
-                .getToken()
-                .getSubject();
+        return token.getToken().getSubject();
     }
 
-    @Transactional
     @Override
-    public OrderResponse createOrder(CreateOrderRequest request) {
+    public Page<OrderResponse> getMyOrders(Pageable pageable) {
 
-        // Reserve stock first
-        for (OrderItemRequest itemRequest : request.getItems()) {
+        String userId = getCurrentUserId();
 
-            ReserveStockRequest reserve =
-                    new ReserveStockRequest();
+        return orderRepository
+                .findByCustomerId(userId, pageable)
+                .map(orderMapper::toResponse);
+    }
 
-            reserve.setProductId(
-                    itemRequest.getProductId()
-            );
+    @Override
+    @Transactional
+    public OrderResponse createOrder() {
 
-            reserve.setQuantity(
-                    itemRequest.getQuantity()
-            );
+        log.info("Creating order for customer {}", getCurrentUserId());
 
-            inventoryClient.reserveStock(reserve);
+        //-------------------------------------------------------------
+        // Fetch Cart
+        //-------------------------------------------------------------
+        CartResponse cart = cartClient.getCart();
 
+        if (cart == null || cart.getItems().isEmpty()) {
+            throw new CartEmptyException("Cart is empty.");
         }
 
-        Order order = Order.builder()
-                           .orderNumber(
-                                   UUID.randomUUID()
-                                       .toString()
-                           )
-                           .customerId(
-                                   getCurrentUserId()
-                           )
-                           .status(
-                                   OrderStatus.CREATED
-                           )
-                           .totalAmount(
-                                   BigDecimal.ZERO
-                           )
-                           .build();
+        //-------------------------------------------------------------
+        // Create Order
+        //-------------------------------------------------------------
+        Order order = new Order();
 
-        BigDecimal totalAmount =
-                BigDecimal.ZERO;
+        order.setOrderNumber(generateOrderNumber());
+        order.setCustomerId(getCurrentUserId());
+        order.setStatus(OrderStatus.CREATED);
+        order.setCreatedAt(LocalDateTime.now());
 
-        for (OrderItemRequest requestItem : request.getItems()) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
-            // Get product details
-            ProductResponse product =
-                    productClient.getProduct(
-                            requestItem.getProductId()
-                    );
+        //-------------------------------------------------------------
+        // Convert Cart Items to Order Items
+        //-------------------------------------------------------------
+        for (CartItemResponse cartItem : cart.getItems()) {
 
-            BigDecimal subtotal =
-                    product.getPrice()
-                           .multiply(
-                                   BigDecimal.valueOf(
-                                           requestItem.getQuantity()
-                                   )
-                           );
+            reserveInventory(cartItem);
 
-            OrderItem orderItem =
-                    OrderItem.builder()
-                             .productId(
-                                     product.getId()
-                             )
-                             .productName(
-                                     product.getName()
-                             )
-                             .price(
-                                     product.getPrice()
-                             )
-                             .quantity(
-                                     requestItem.getQuantity()
-                             )
-                             .subtotal(
-                                     subtotal
-                             )
-                             .build();
+            OrderItem orderItem = new OrderItem();
+
+            orderItem.setProductId(cartItem.getProductId());
+            orderItem.setProductName(cartItem.getProductName());
+            orderItem.setPrice(cartItem.getPrice());
+            orderItem.setQuantity(cartItem.getQuantity());
+
+            BigDecimal subtotal = calculateSubtotal(
+                    cartItem.getPrice(),
+                    cartItem.getQuantity());
+
+            orderItem.setSubtotal(subtotal);
 
             order.addItem(orderItem);
 
-            totalAmount =
-                    totalAmount.add(subtotal);
-
+            totalAmount = totalAmount.add(subtotal);
         }
 
+        //-------------------------------------------------------------
+        // Save Order
+        //-------------------------------------------------------------
         order.setTotalAmount(totalAmount);
 
-        Order saved =
-                orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
-        return mapToResponse(saved);
+        log.info("Order {} created successfully",
+                savedOrder.getOrderNumber());
+
+        //-------------------------------------------------------------
+        // Clear Cart
+        //-------------------------------------------------------------
+        cartClient.clearCart();
+
+        return OrderResponse.from(savedOrder);
     }
+
+    /**
+     * Reserve inventory.
+     */
+    private void reserveInventory(CartItemResponse cartItem) {
+
+        try {
+
+            inventoryClient.reserveStock(
+
+                    new ReserveStockRequest(
+                            cartItem.getProductId(),
+                            cartItem.getQuantity()
+                    )
+            );
+        } catch (Exception ex) {
+
+            log.error("Inventory reservation failed for product {}",
+                    cartItem.getProductId());
+
+            throw new InventoryReservationException(
+                    "Unable to reserve inventory for product "
+                            + cartItem.getProductId()
+            );
+        }
+    }
+
+    /**
+     * Calculate subtotal.
+     */
+    private BigDecimal calculateSubtotal(BigDecimal price,
+                                         Integer quantity) {
+
+        return price.multiply(
+                BigDecimal.valueOf(quantity));
+    }
+
+    /**
+     * Generate order number.
+     */
+    private String generateOrderNumber() {
+
+        return "ORD-"
+                + UUID.randomUUID()
+                      .toString()
+                      .replace("-", "")
+                      .substring(0, 12)
+                      .toUpperCase();
+    }
+
+//    @Transactional
+//    @Override
+//    public OrderResponse createOrder(CreateOrderRequest request) {
+//
+//        // Reserve stock first
+//        for (OrderItemRequest itemRequest : request.getItems()) {
+//
+//            ReserveStockRequest reserve =
+//                    new ReserveStockRequest();
+//
+//            reserve.setProductId(
+//                    itemRequest.getProductId()
+//            );
+//
+//            reserve.setQuantity(
+//                    itemRequest.getQuantity()
+//            );
+//
+//            inventoryClient.reserveStock(reserve);
+//
+//        }
+//
+//        Order order = Order.builder()
+//                           .orderNumber(
+//                                   UUID.randomUUID()
+//                                       .toString()
+//                           )
+//                           .customerId(
+//                                   getCurrentUserId()
+//                           )
+//                           .status(
+//                                   OrderStatus.CREATED
+//                           )
+//                           .totalAmount(
+//                                   BigDecimal.ZERO
+//                           )
+//                           .build();
+//
+//        BigDecimal totalAmount =
+//                BigDecimal.ZERO;
+//
+//        for (OrderItemRequest requestItem : request.getItems()) {
+//
+//            // Get product details
+//            ProductResponse product =
+//                    productClient.getProduct(
+//                            requestItem.getProductId()
+//                    );
+//
+//            BigDecimal subtotal =
+//                    product.getPrice()
+//                           .multiply(
+//                                   BigDecimal.valueOf(
+//                                           requestItem.getQuantity()
+//                                   )
+//                           );
+//
+//            OrderItem orderItem =
+//                    OrderItem.builder()
+//                             .productId(
+//                                     product.getId()
+//                             )
+//                             .productName(
+//                                     product.getName()
+//                             )
+//                             .price(
+//                                     product.getPrice()
+//                             )
+//                             .quantity(
+//                                     requestItem.getQuantity()
+//                             )
+//                             .subtotal(
+//                                     subtotal
+//                             )
+//                             .build();
+//
+//            order.addItem(orderItem);
+//
+//            totalAmount =
+//                    totalAmount.add(subtotal);
+//
+//        }
+//
+//        order.setTotalAmount(totalAmount);
+//
+//        Order saved =
+//                orderRepository.save(order);
+//
+//        return mapToResponse(saved);
+//    }
 
     @Override
     public OrderResponse getOrderById(Long id) {
@@ -213,6 +346,44 @@ public class OrderServiceImpl implements OrderService {
         log.info("Order deleted successfully with id: {}", id);
     }
 
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                                     .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Verify owner
+        if (!order.getCustomerId().equals(getCurrentUserId())) {
+            throw new RuntimeException("You are not authorized to cancel this order");
+        }
+
+        // Only CREATED orders can be cancelled
+        if (order.getStatus() != OrderStatus.CREATED) {
+            throw new RuntimeException(
+                    "Only CREATED orders can be cancelled"
+            );
+        }
+
+        // Release reserved inventory
+        for (OrderItem item : order.getItems()) {
+
+            ReserveStockRequest request = new ReserveStockRequest();
+
+            request.setProductId(item.getProductId());
+            request.setQuantity(item.getQuantity());
+
+            inventoryClient.releaseStock(request);
+        }
+
+        // Update status
+        order.setStatus(OrderStatus.CANCELLED);
+
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapToResponse(updatedOrder);
+    }
+
     private OrderResponse mapToResponse(Order order) {
 
         List<OrderItemResponse> items =
@@ -233,11 +404,10 @@ public class OrderServiceImpl implements OrderService {
                             .id(order.getId())
                             .orderNumber(order.getOrderNumber())
                             .customerId(order.getCustomerId())
-                            .status(order.getStatus())
+                            .status(order.getStatus().toString())
                             .totalAmount(order.getTotalAmount())
                             .items(items)
                             .createdAt(order.getCreatedAt())
                             .build();
-
     }
 }
