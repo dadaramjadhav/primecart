@@ -1,0 +1,12 @@
+### Get All Products
+GET http://localhost:8081/api/products
+
+###
+
+### Get Product By Id
+GET http://localhost:8081/api/products/1
+
+###
+
+### Get Active Products
+GET http://localhost:8081/api/products/active

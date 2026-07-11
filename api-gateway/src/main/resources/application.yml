@@ -1,9 +1,16 @@
 server:
   port: 8080
-
+logging:
+  level:
+    org.springframework.security: TRACE
 spring:
   application:
     name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/primecart
   cloud:
     gateway:
       server:

@@ -1,0 +1,54 @@
+#server port
+server:
+  port: 8081
+
+#app name
+spring:
+  application:
+    name: product-service
+
+#keycloak outh2.0
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/primecart
+
+#  db settings
+  datasource:
+#    url: jdbc:mysql://host.docker.internal:3306/product_db
+    url: jdbc:mysql://localhost:3306/product_db
+    username: root
+    password: Admin@12345
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+#flyway db migration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+#actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+info:
+  app:
+    name: Product Service
+    description: PrimeCart Product Microservice
+    version: 1.0.0
+
+#logging config
+logging:
+  level:
+    org.springframework.security: DEBUG
