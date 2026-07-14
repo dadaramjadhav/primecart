@@ -22,7 +22,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/api/test/retry"
                         ).permitAll()
                         .requestMatchers(
                                 "/actuator/health",

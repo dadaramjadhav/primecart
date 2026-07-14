@@ -8,6 +8,7 @@ import com.primecart.entity.Category;
 import com.primecart.entity.Product;
 import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.mapper.ProductMapper;
+import com.primecart.metrics.ProductMetrics;
 import com.primecart.repository.BrandRepository;
 import com.primecart.repository.CategoryRepository;
 import com.primecart.repository.ProductRepository;
@@ -35,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
+    private final ProductMetrics productMetrics;
 
     @CacheEvict(value = "allProducts", allEntries = true)
     @Override
@@ -74,11 +76,11 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                                            .orElseThrow(() -> {
                                                log.warn("Product not found with id: {}", id);
+                                               productMetrics.incrementProductNotFound();
                                                return new ResourceNotFoundException("Product not found with id: " + id);
                                            });
 
         log.info("Product fetched successfully with id: {}", id);
-
         return productMapper.toResponse(product);
     }
 
@@ -99,6 +101,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                                            .orElseThrow(() -> {
                                                log.warn("Product not found with id: {}", id);
+                                               productMetrics.incrementProductNotFound();
                                                return new ResourceNotFoundException("Product not found with id: " + id);
                                            });
 
@@ -137,6 +140,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                                            .orElseThrow(() -> {
                                                log.warn("Product not found with id: {}", id);
+                                               productMetrics.incrementProductNotFound();
                                                return new ResourceNotFoundException("Product not found with id: " + id);
                                            });
 

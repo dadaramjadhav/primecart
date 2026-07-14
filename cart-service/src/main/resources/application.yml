@@ -5,6 +5,12 @@ spring:
   application:
     name: cart-service
 
+
+  boot:
+    admin:
+      client:
+        url: http://localhost:9191
+
   cloud:
     openfeign:
       micrometer:
@@ -38,7 +44,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: "*"
+  #        include: health,info,metrics,prometheus,caches
   endpoint:
     health:
       show-details: always

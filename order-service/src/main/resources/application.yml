@@ -5,6 +5,11 @@ spring:
   application:
     name: order-service
 
+  boot:
+    admin:
+      client:
+        url: http://localhost:9191
+
   datasource:
     url: jdbc:mysql://localhost:3306/orderdb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
     username: root
@@ -34,7 +39,11 @@ spring:
     openfeign:
       micrometer:
         enabled: true
-
+      client:
+        config:
+          inventory-service:
+            connect-timeout: 2000
+            read-timeout: 3000
 management:
   endpoint:
     health:
@@ -43,7 +52,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include:
+          - "*"
+          - health
+          - info
+          - prometheus
+          - circuitbreakers
+          - circuitbreakerevents
+  #        include: health,info,metrics,prometheus,caches
+  health:
+    circuitbreakers:
+      enabled: true
 
   tracing:
     enabled: true
@@ -69,6 +88,41 @@ logging:
     root: INFO
     com.primecart: DEBUG
     org.springframework.web: INFO
+    io.github.resilience4j.retry: DEBUG
+    com.primecart.service.InventoryIntegrationService: DEBUG
 #    org.hibernate.SQL: DEBUG
 #    org.hibernate.orm.jdbc.bind: TRACE
 #    org.springframework.security: DEBUG
+#==============================resilience4j configuration===============================
+resilience4j:
+  retry:
+    instances:
+      inventoryService:
+        max-attempts: 3
+        wait-duration: 10s
+        #        enable-exponential-backoff: true
+        #        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - feign.RetryableException
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - com.primecart.exception.InventoryReservationException
+
+  circuitbreaker:
+    instances:
+      inventoryService:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true
+
+  bulkhead:
+    instances:
+      inventoryService:
+        max-concurrent-calls: 2
+        max-wait-duration: 0

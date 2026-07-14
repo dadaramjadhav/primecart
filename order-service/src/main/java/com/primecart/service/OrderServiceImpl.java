@@ -1,7 +1,6 @@
 package com.primecart.service;
 
 import com.primecart.client.CartClient;
-import com.primecart.client.InventoryClient;
 import com.primecart.client.PaymentClient;
 import com.primecart.client.ProductClient;
 import com.primecart.dto.request.CreatePaymentRequest;
@@ -15,7 +14,6 @@ import com.primecart.entity.Order;
 import com.primecart.entity.OrderItem;
 import com.primecart.entity.OrderStatus;
 import com.primecart.exception.CartEmptyException;
-import com.primecart.exception.InventoryReservationException;
 import com.primecart.exception.OrderNotFoundException;
 import com.primecart.mapper.OrderMapper;
 import com.primecart.repository.OrderRepository;
@@ -41,10 +39,10 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
-    private final InventoryClient inventoryClient;
     private final ProductClient productClient;
     private final CartClient cartClient;
     private final PaymentClient paymentClient;
+    private final InventoryIntegrationService inventoryIntegrationService;
 
     /**
      * Logged-in customer.
@@ -157,25 +155,13 @@ public class OrderServiceImpl implements OrderService {
      */
     private void reserveInventory(CartItemResponse cartItem) {
 
-        try {
+        ReserveStockRequest request =
+                new ReserveStockRequest(
+                        cartItem.getProductId(),
+                        cartItem.getQuantity()
+                );
 
-            inventoryClient.reserveStock(
-
-                    new ReserveStockRequest(
-                            cartItem.getProductId(),
-                            cartItem.getQuantity()
-                    )
-            );
-        } catch (Exception ex) {
-
-            log.error("Inventory reservation failed for product {}",
-                    cartItem.getProductId());
-
-            throw new InventoryReservationException(
-                    "Unable to reserve inventory for product "
-                            + cartItem.getProductId()
-            );
-        }
+        inventoryIntegrationService.reserveStock(request);
     }
 
     /**
@@ -388,7 +374,7 @@ public class OrderServiceImpl implements OrderService {
             request.setProductId(item.getProductId());
             request.setQuantity(item.getQuantity());
 
-            inventoryClient.releaseStock(request);
+            inventoryIntegrationService.releaseStock(request);
         }
 
         // Update status
@@ -427,7 +413,7 @@ public class OrderServiceImpl implements OrderService {
             request.setProductId(item.getProductId());
             request.setQuantity(item.getQuantity());
 
-            inventoryClient.confirmStock(request);
+            inventoryIntegrationService.confirmStock(request);
         }
 
         // Update order status
@@ -488,7 +474,7 @@ public class OrderServiceImpl implements OrderService {
                             item.getQuantity()
                     );
 
-            inventoryClient.releaseStock(request);
+            inventoryIntegrationService.releaseStock(request);
         }
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -524,7 +510,7 @@ public class OrderServiceImpl implements OrderService {
                             item.getQuantity()
                     );
 
-            inventoryClient.confirmStock(request);
+            inventoryIntegrationService.confirmStock(request);
         }
 
         order.setStatus(

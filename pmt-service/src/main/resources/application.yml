@@ -5,6 +5,11 @@ spring:
   application:
     name: payment-service
 
+  boot:
+    admin:
+      client:
+        url: http://localhost:9191
+
   datasource:
     url: jdbc:mysql://localhost:3306/payment_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
     username: root
@@ -43,7 +48,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: "*"
+  #        include: health,info,metrics,prometheus,caches
 
   tracing:
     enabled: true

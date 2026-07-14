@@ -3,6 +3,7 @@ package com.primecart.controller;
 import com.primecart.dto.request.CreateProductRequest;
 import com.primecart.dto.request.UpdateProductRequest;
 import com.primecart.dto.response.ProductResponse;
+import com.primecart.metrics.ProductMetrics;
 import com.primecart.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +22,21 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductMetrics productMetrics;
 
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(
             @Valid @RequestBody CreateProductRequest request) {
 
-        log.info("POST /api/products - Create product request received");
+        log.info("POST /api/products - Create product request received: categoryId={}, brandId={}, active={}",
+                request.categoryId(), request.brandId(), request.active());
 
         ProductResponse response = productService.createProduct(request);
+        log.info("POST /api/products - Product created successfully: productId={}", response.id());
+
+        // Count only successful product creation
+        productMetrics.incrementProductCreated();
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -37,17 +45,31 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateProductRequest request) {
 
-        log.info("PUT /api/products/{} - Update product request received", id);
+        log.info("PUT /api/products/{} - Update product request received: categoryId={}, brandId={}, active={}",
+                id, request.categoryId(), request.brandId(), request.active());
 
-        return ResponseEntity.ok(productService.updateProduct(id, request));
+        ProductResponse response = productService.updateProduct(id, request);
+        log.info("PUT /api/products/{} - Product updated successfully", id);
+
+        // Count only successful product update
+        productMetrics.incrementProductUpdated(id);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductResponse> getProductById(
+            @PathVariable Long id) {
 
         log.info("GET /api/products/{} - Get product by id request received", id);
 
-        return ResponseEntity.ok(productService.getProductById(id));
+        ProductResponse response = productService.getProductById(id);
+        log.info("GET /api/products/{} - Product retrieved successfully", id);
+
+        // Count only when the product was found successfully
+        productMetrics.incrementProductView(id);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/active")
@@ -55,7 +77,11 @@ public class ProductController {
 
         log.info("GET /api/products/active - Get active products request received");
 
-        return ResponseEntity.ok(productService.getActiveProducts());
+        List<ProductResponse> products = productService.getActiveProducts();
+        log.info("GET /api/products/active - Active products retrieved successfully: count={}", products.size());
+        productMetrics.incrementActiveProductsView();
+
+        return ResponseEntity.ok(products);
     }
 
     @DeleteMapping("/{id}")
@@ -64,39 +90,40 @@ public class ProductController {
         log.info("DELETE /api/products/{} - Delete product request received", id);
 
         productService.deleteProduct(id);
+        log.info("DELETE /api/products/{} - Product deleted successfully", id);
+        productMetrics.incrementProductDeleted(id);
+
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> getProducts(
-
             @RequestParam(required = false) Long category,
-
             @RequestParam(required = false) Long brand,
-
             @RequestParam(required = false) Boolean active,
-
             @RequestParam(required = false) String keyword,
-
             @RequestParam(defaultValue = "0") int page,
-
             @RequestParam(defaultValue = "10") int size,
-
             @RequestParam(defaultValue = "id") String sortBy,
-
             @RequestParam(defaultValue = "asc") String direction) {
 
-        log.info("GET /api/products - Get products request received");
+        log.info("GET /api/products - Get products request received: category={}, brand={}, active={}, " +
+                        "keywordPresent={}, page={}, size={}, sortBy={}, direction={}",
+                category, brand, active, keyword != null && !keyword.isBlank(), page, size, sortBy, direction);
 
-        return ResponseEntity.ok(
-                productService.getProducts(
-                        category,
-                        brand,
-                        active,
-                        keyword,
-                        page,
-                        size,
-                        sortBy,
-                        direction));
+        Page<ProductResponse> products = productService.getProducts(
+                category,
+                brand,
+                active,
+                keyword,
+                page,
+                size,
+                sortBy,
+                direction);
+
+        log.info("GET /api/products - Products retrieved successfully: returned={}, totalElements={}, totalPages={}",
+                products.getNumberOfElements(), products.getTotalElements(), products.getTotalPages());
+
+        return ResponseEntity.ok(products);
     }
 }

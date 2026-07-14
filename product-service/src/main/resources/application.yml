@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: product-service
+
+  boot:
+    admin:
+      client:
+        url: http://localhost:9191
+
   cache:
     type: redis
   data:
@@ -40,7 +46,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,caches
+        include: "*"
+  #        include: health,info,metrics,prometheus,caches
 
   endpoint:
     health:
@@ -73,3 +80,14 @@ info:
 logging:
   level:
     org.springframework.security: DEBUG
+
+#retry config
+resilience4j:
+  retry:
+    instances:
+      productRetry:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - java.io.IOException
+#          - feign.RetryableException

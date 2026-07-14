@@ -10,6 +10,11 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/primecart
 
+  boot:
+    admin:
+      client:
+        url: http://localhost:9191
+
   cloud:
     gateway:
       server:
@@ -75,8 +80,8 @@ management:
         security: true
   endpoints:
     web:
-      exposure:
-        include: health,info,prometheus
+      include: "*"
+  #        include: health,info,metrics,prometheus,caches
 
   endpoint:
     health:
