@@ -1,4 +1,4 @@
-package com.primecart.config;
+package com.primecart.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,8 +30,6 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
                         .pathMatchers("/dev/token").permitAll()
-
-                        .pathMatchers("/debug", "/test").permitAll()
 
                         // Product Service
                         .pathMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("USER", "ADMIN")

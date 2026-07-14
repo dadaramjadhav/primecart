@@ -41,6 +41,9 @@ public class DevController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public Mono<ResponseEntity<String>> token(
+            @Parameter(description = "username", example = "username")
+//            @RequestParam(defaultValue = "admin")
+            String username,
 
             @Parameter(description = "Grant type", example = "password")
             @RequestParam(defaultValue = "password")
@@ -49,7 +52,6 @@ public class DevController {
             @Parameter(description = "Client ID", example = "api-gateway")
             @RequestParam(defaultValue = "api-gateway")
             String client_id,
-            String username,
 
             @Parameter(description = "Password", example = "123")
             @RequestParam(defaultValue = "123")

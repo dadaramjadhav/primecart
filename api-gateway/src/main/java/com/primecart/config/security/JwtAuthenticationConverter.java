@@ -1,4 +1,4 @@
-package com.primecart.config;
+package com.primecart.config.security;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;

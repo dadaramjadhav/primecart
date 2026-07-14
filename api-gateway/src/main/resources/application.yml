@@ -80,7 +80,8 @@ management:
         security: true
   endpoints:
     web:
-      include: "*"
+      exposure:
+        include: "*"
   #        include: health,info,metrics,prometheus,caches
 
   endpoint:
