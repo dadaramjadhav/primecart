@@ -21,6 +21,8 @@ public class ProductMapper {
         product.setDescription(request.description());
         product.setPrice(request.price());
         product.setImageUrl(request.imageUrl());
+        product.setSku(request.sku());
+        product.setStock(request.stock());
         product.setCategory(category);
         product.setBrand(brand);
         product.setActive(request.active());
