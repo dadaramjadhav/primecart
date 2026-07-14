@@ -13,12 +13,10 @@ spring:
     password: Admin@12345
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-
   jpa:
     hibernate:
       ddl-auto: validate
   #    show-sql: true
-
 
   flyway:
     enabled: true
@@ -29,17 +27,30 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8090/realms/primecart
+          issuer-uri: http://localhost:8080/realms/primecart
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-
   endpoint:
     health:
       show-details: always
+
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 
 info:
   app:

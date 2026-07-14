@@ -1,5 +1,7 @@
 package com.primecart.dto.response;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -28,5 +30,8 @@ public record ProductResponse(
         LocalDateTime createdAt,
 
         LocalDateTime updatedAt
-) {
+) implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

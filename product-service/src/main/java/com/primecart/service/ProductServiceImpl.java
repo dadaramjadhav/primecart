@@ -14,6 +14,9 @@ import com.primecart.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
 
+    @CacheEvict(value = "allProducts", allEntries = true)
     @Override
     public ProductResponse createProduct(CreateProductRequest request) {
 
@@ -61,6 +65,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(savedProduct);
     }
 
+    @Cacheable(value = "products", key = "#id")
     @Override
     public ProductResponse getProductById(Long id) {
 
@@ -82,6 +87,10 @@ public class ProductServiceImpl implements ProductService {
         return List.of();
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "allProducts", allEntries = true)
+    })
     @Override
     public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
 
@@ -116,6 +125,10 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(updatedProduct);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "allProducts", allEntries = true)
+    })
     @Override
     public void deleteProduct(Long id) {
 
@@ -132,6 +145,10 @@ public class ProductServiceImpl implements ProductService {
         log.info("Product deleted successfully with id: {}", id);
     }
 
+    @Cacheable(
+            value = "allProducts"
+//            key = "{#category,#brand,#active,#keyword,#page,#size,#sortBy,#direction}"
+    )
     @Override
     public Page<ProductResponse> getProducts(
             Long category,

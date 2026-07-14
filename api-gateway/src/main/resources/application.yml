@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8181
 
 spring:
   application:
@@ -8,11 +8,26 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8090/realms/primecart
+          issuer-uri: http://localhost:8080/realms/primecart
+
   cloud:
     gateway:
       server:
         webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:5173"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+
           routes:
             - id: product-service
               uri: http://localhost:8081
@@ -33,19 +48,41 @@ spring:
               uri: http://localhost:8084
               predicates:
                 - Path=/api/inventory/**
+
             - id: payment-service
               uri: http://localhost:8085
               predicates:
                 - Path=/api/payments/**
-                
+
             - id: keycloak-token
-              uri: http://localhost:8090
+              uri: http://localhost:8080
               predicates:
                 - Path=/auth/token
               filters:
                 - RewritePath=/auth/token, /realms/primecart/protocol/openid-connect/token
 
-logging:
-  level:
-    org.springframework.security: TRACE
-    org.springframework.security.oauth2: TRACE
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+    otlp:
+      tracing:
+        endpoint: http://localhost:4318/v1/traces
+  observations:
+    enable:
+      spring:
+        security: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+  endpoint:
+    health:
+      show-details: always
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true

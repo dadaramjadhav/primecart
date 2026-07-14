@@ -20,7 +20,7 @@ function Navbar() {
 
               <Link to="/orders">Orders</Link>
 
-              <button
+              <button className="cursor-pointer"
                 onClick={() =>
                   keycloak.logout({
                     redirectUri: window.location.origin,

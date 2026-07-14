@@ -1,22 +1,22 @@
-#server port
 server:
   port: 8081
 
-#app name
 spring:
   application:
     name: product-service
-
-#keycloak outh2.0
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8090/realms/primecart
-
-#  db settings
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 2
+          max-wait: 2s
   datasource:
-#    url: jdbc:mysql://host.docker.internal:3306/product_db
     url: jdbc:mysql://localhost:3306/product_db
     username: root
     password: Admin@12345
@@ -26,21 +26,43 @@ spring:
       ddl-auto: validate
     show-sql: true
 
-#flyway db migration
   flyway:
     enabled: true
     baseline-on-migrate: true
 
-#actuator
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/primecart
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus,caches
 
   endpoint:
     health:
       show-details: always
+
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 
 info:
   app:
@@ -48,7 +70,6 @@ info:
     description: PrimeCart Product Microservice
     version: 1.0.0
 
-#logging config
 logging:
   level:
     org.springframework.security: DEBUG

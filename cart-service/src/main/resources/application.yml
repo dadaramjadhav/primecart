@@ -5,6 +5,10 @@ spring:
   application:
     name: cart-service
 
+  cloud:
+    openfeign:
+      micrometer:
+        enabled: true
   datasource:
     url: jdbc:mysql://localhost:3306/cart_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
     username: root
@@ -15,9 +19,9 @@ spring:
     hibernate:
       ddl-auto: validate
     #    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+  #    properties:
+  #      hibernate:
+  #        format_sql: true
 
   flyway:
     enabled: true
@@ -28,18 +32,28 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8090/realms/primecart
+          issuer-uri: http://localhost:8080/realms/primecart
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
-
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
 
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 info:
   app:
     name: Cart Service
