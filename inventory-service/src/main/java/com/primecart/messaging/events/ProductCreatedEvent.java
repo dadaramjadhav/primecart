@@ -20,6 +20,5 @@ public record ProductCreatedEvent(
 
         Integer initialStock,
 
-        Instant occurredAt
-) {
+        Instant occurredAt) {
 }

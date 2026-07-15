@@ -3,8 +3,6 @@ package com.primecart.service;
 import com.primecart.client.CartClient;
 import com.primecart.client.PaymentClient;
 import com.primecart.client.ProductClient;
-import com.primecart.dto.request.CreatePaymentRequest;
-import com.primecart.dto.request.PaymentMethod;
 import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.response.CartItemResponse;
 import com.primecart.dto.response.CartResponse;
@@ -16,9 +14,12 @@ import com.primecart.entity.OrderStatus;
 import com.primecart.exception.CartEmptyException;
 import com.primecart.exception.OrderNotFoundException;
 import com.primecart.mapper.OrderMapper;
+import com.primecart.messaging.events.OrderCreatedEvent;
+import com.primecart.messaging.events.OrderItemEvent;
 import com.primecart.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -43,20 +45,19 @@ public class OrderServiceImpl implements OrderService {
     private final CartClient cartClient;
     private final PaymentClient paymentClient;
     private final InventoryIntegrationService inventoryIntegrationService;
-
-    /**
-     * Logged-in customer.
-     */
+    private final ApplicationEventPublisher applicationEventPublisher;
+    
     private String getCurrentUserId() {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext()
-                                     .getAuthentication();
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        JwtAuthenticationToken token =
-                (JwtAuthenticationToken) authentication;
+        JwtAuthenticationToken token = (JwtAuthenticationToken) authentication;
 
-        return token.getToken().getSubject();
+        return token
+                .getToken()
+                .getSubject();
     }
 
     @Override
@@ -73,35 +74,30 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse createOrder() {
 
-        log.info("Creating order for customer {}", getCurrentUserId());
+        String customerId = getCurrentUserId();
 
-        //-------------------------------------------------------------
-        // Fetch Cart
-        //-------------------------------------------------------------
+        log.info("Creating order for customer {}", customerId);
+
         CartResponse cart = cartClient.getCart();
 
-        if (cart == null || cart.getItems().isEmpty()) {
+        if (cart == null || cart.getItems() == null || cart
+                .getItems()
+                .isEmpty()) {
+
             throw new CartEmptyException("Cart is empty.");
         }
 
-        //-------------------------------------------------------------
-        // Create Order
-        //-------------------------------------------------------------
         Order order = new Order();
 
         order.setOrderNumber(generateOrderNumber());
-        order.setCustomerId(getCurrentUserId());
-        order.setStatus(OrderStatus.CREATED);
+        order.setCustomerId(customerId);
+        order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
-        //-------------------------------------------------------------
-        // Convert Cart Items to Order Items
-        //-------------------------------------------------------------
         for (CartItemResponse cartItem : cart.getItems()) {
-
-            reserveInventory(cartItem);
 
             OrderItem orderItem = new OrderItem();
 
@@ -110,9 +106,7 @@ public class OrderServiceImpl implements OrderService {
             orderItem.setPrice(cartItem.getPrice());
             orderItem.setQuantity(cartItem.getQuantity());
 
-            BigDecimal subtotal = calculateSubtotal(
-                    cartItem.getPrice(),
-                    cartItem.getQuantity());
+            BigDecimal subtotal = calculateSubtotal(cartItem.getPrice(), cartItem.getQuantity());
 
             orderItem.setSubtotal(subtotal);
 
@@ -121,33 +115,29 @@ public class OrderServiceImpl implements OrderService {
             totalAmount = totalAmount.add(subtotal);
         }
 
-        //-------------------------------------------------------------
-        // Save Order
-        //-------------------------------------------------------------
         order.setTotalAmount(totalAmount);
 
-        Order savedOrder =
-                orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
-        CreatePaymentRequest paymentRequest =
-                CreatePaymentRequest.builder()
-                                    .orderId(savedOrder.getId())
-                                    .amount(savedOrder.getTotalAmount())
-                                    .method(PaymentMethod.CARD)
-                                    .build();
+        OrderCreatedEvent event = new OrderCreatedEvent(UUID.randomUUID(), "ORDER_CREATED", 1, savedOrder.getId(), savedOrder.getOrderNumber(),
+                savedOrder.getCustomerId(), savedOrder.getTotalAmount(), mapItems(savedOrder.getItems()), Instant.now());
 
-        paymentClient.createPayment(paymentRequest);
-
-//        savedOrder.setStatus(OrderStatus.CREATED);
-        log.info("Order {} created successfully",
-                savedOrder.getOrderNumber());
         //-------------------------------------------------------------
-        // Clear Cart
+        // Publish In-Process Event
         //-------------------------------------------------------------
-        cartClient.clearCart();
-        return mapToResponse(
-                orderRepository.save(savedOrder)
-        );
+        applicationEventPublisher.publishEvent(event);
+
+        log.info("Pending order created. orderId={}, orderNumber={}, eventId={}", savedOrder.getId(), savedOrder.getOrderNumber(), event.eventId());
+
+        return mapToResponse(savedOrder);
+    }
+
+    private List<OrderItemEvent> mapItems(List<OrderItem> orderItems) {
+
+        return orderItems
+                .stream()
+                .map(orderItem -> new OrderItemEvent(orderItem.getProductId(), orderItem.getQuantity(), orderItem.getPrice()))
+                .toList();
     }
 
     /**
@@ -155,11 +145,7 @@ public class OrderServiceImpl implements OrderService {
      */
     private void reserveInventory(CartItemResponse cartItem) {
 
-        ReserveStockRequest request =
-                new ReserveStockRequest(
-                        cartItem.getProductId(),
-                        cartItem.getQuantity()
-                );
+        ReserveStockRequest request = new ReserveStockRequest(cartItem.getProductId(), cartItem.getQuantity());
 
         inventoryIntegrationService.reserveStock(request);
     }
@@ -167,11 +153,9 @@ public class OrderServiceImpl implements OrderService {
     /**
      * Calculate subtotal.
      */
-    private BigDecimal calculateSubtotal(BigDecimal price,
-                                         Integer quantity) {
+    private BigDecimal calculateSubtotal(BigDecimal price, Integer quantity) {
 
-        return price.multiply(
-                BigDecimal.valueOf(quantity));
+        return price.multiply(BigDecimal.valueOf(quantity));
     }
 
     /**
@@ -179,12 +163,12 @@ public class OrderServiceImpl implements OrderService {
      */
     private String generateOrderNumber() {
 
-        return "ORD-"
-                + UUID.randomUUID()
-                      .toString()
-                      .replace("-", "")
-                      .substring(0, 12)
-                      .toUpperCase();
+        return "ORD-" + UUID
+                .randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 12)
+                .toUpperCase();
     }
 
 //    @Transactional
@@ -283,9 +267,9 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Fetching order with id: {}", id);
 
-        Order order = orderRepository.findById(id)
-                                     .orElseThrow(() ->
-                                             new OrderNotFoundException("Order not found with id: " + id));
+        Order order = orderRepository
+                .findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
 
         return orderMapper.toResponse(order);
     }
@@ -295,10 +279,9 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Fetching order with order number: {}", orderNumber);
 
-        Order order = orderRepository.findByOrderNumber(orderNumber)
-                                     .orElseThrow(() ->
-                                             new OrderNotFoundException(
-                                                     "Order not found with order number: " + orderNumber));
+        Order order = orderRepository
+                .findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with order number: " + orderNumber));
 
         return orderMapper.toResponse(order);
     }
@@ -308,8 +291,9 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Fetching all orders");
 
-        return orderRepository.findAll(pageable)
-                              .map(orderMapper::toResponse);
+        return orderRepository
+                .findAll(pageable)
+                .map(orderMapper::toResponse);
     }
 
     @Override
@@ -317,20 +301,21 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Fetching orders for customerId: {}", customerId);
 
-        return orderRepository.findByCustomerId(customerId)
-                              .stream()
-                              .map(orderMapper::toResponse)
-                              .toList();
+        return orderRepository
+                .findByCustomerId(customerId)
+                .stream()
+                .map(orderMapper::toResponse)
+                .toList();
     }
 
     @Override
-    public Page<OrderResponse> getOrdersByStatus(OrderStatus status,
-                                                 Pageable pageable) {
+    public Page<OrderResponse> getOrdersByStatus(OrderStatus status, Pageable pageable) {
 
         log.info("Fetching orders with status: {}", status);
 
-        return orderRepository.findByStatus(status, pageable)
-                              .map(orderMapper::toResponse);
+        return orderRepository
+                .findByStatus(status, pageable)
+                .map(orderMapper::toResponse);
     }
 
     @Override
@@ -338,9 +323,9 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Deleting order with id: {}", id);
 
-        Order order = orderRepository.findById(id)
-                                     .orElseThrow(() ->
-                                             new OrderNotFoundException("Order not found with id: " + id));
+        Order order = orderRepository
+                .findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
 
         orderRepository.delete(order);
 
@@ -351,19 +336,20 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse cancelOrder(Long orderId) {
 
-        Order order = orderRepository.findById(orderId)
-                                     .orElseThrow(() -> new RuntimeException("Order not found"));
+        Order order = orderRepository
+                .findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Verify owner
-        if (!order.getCustomerId().equals(getCurrentUserId())) {
+        if (!order
+                .getCustomerId()
+                .equals(getCurrentUserId())) {
             throw new RuntimeException("You are not authorized to cancel this order");
         }
 
         // Only CREATED orders can be cancelled
         if (order.getStatus() != OrderStatus.CREATED) {
-            throw new RuntimeException(
-                    "Only CREATED orders can be cancelled"
-            );
+            throw new RuntimeException("Only CREATED orders can be cancelled");
         }
 
         // Release reserved inventory
@@ -389,20 +375,20 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse confirmOrder(Long orderId) {
 
-        Order order = orderRepository.findById(orderId)
-                                     .orElseThrow(() ->
-                                             new RuntimeException("Order not found"));
+        Order order = orderRepository
+                .findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Verify owner
-        if (!order.getCustomerId().equals(getCurrentUserId())) {
-            throw new RuntimeException(
-                    "You are not authorized to confirm this order");
+        if (!order
+                .getCustomerId()
+                .equals(getCurrentUserId())) {
+            throw new RuntimeException("You are not authorized to confirm this order");
         }
 
         // Only CREATED orders can be confirmed
         if (order.getStatus() != OrderStatus.CREATED) {
-            throw new RuntimeException(
-                    "Only CREATED orders can be confirmed");
+            throw new RuntimeException("Only CREATED orders can be confirmed");
         }
 
         // Confirm stock for every item
@@ -426,40 +412,40 @@ public class OrderServiceImpl implements OrderService {
 
     private OrderResponse mapToResponse(Order order) {
 
-        List<OrderItemResponse> items =
-                order.getItems()
-                     .stream()
-                     .map(item ->
-                             OrderItemResponse.builder()
-                                              .productId(item.getProductId())
-                                              .productName(item.getProductName())
-                                              .price(item.getPrice())
-                                              .quantity(item.getQuantity())
-                                              .subtotal(item.getSubtotal())
-                                              .build()
-                     )
-                     .toList();
+        List<OrderItemResponse> items = order
+                .getItems()
+                .stream()
+                .map(item -> OrderItemResponse
+                        .builder()
+                        .productId(item.getProductId())
+                        .productName(item.getProductName())
+                        .price(item.getPrice())
+                        .quantity(item.getQuantity())
+                        .subtotal(item.getSubtotal())
+                        .build())
+                .toList();
 
-        return OrderResponse.builder()
-                            .id(order.getId())
-                            .orderNumber(order.getOrderNumber())
-                            .customerId(order.getCustomerId())
-                            .status(order.getStatus().toString())
-                            .totalAmount(order.getTotalAmount())
-                            .items(items)
-                            .createdAt(order.getCreatedAt())
-                            .build();
+        return OrderResponse
+                .builder()
+                .id(order.getId())
+                .orderNumber(order.getOrderNumber())
+                .customerId(order.getCustomerId())
+                .status(order
+                        .getStatus()
+                        .toString())
+                .totalAmount(order.getTotalAmount())
+                .items(items)
+                .createdAt(order.getCreatedAt())
+                .build();
     }
 
     @Override
     @Transactional
     public OrderResponse paymentFailed(Long orderId) {
 
-        Order order =
-                orderRepository.findById(orderId)
-                               .orElseThrow(() ->
-                                       new OrderNotFoundException(
-                                               "Order not found"));
+        Order order = orderRepository
+                .findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
             return mapToResponse(order);
@@ -468,57 +454,39 @@ public class OrderServiceImpl implements OrderService {
         // Release inventory
         for (OrderItem item : order.getItems()) {
 
-            ReserveStockRequest request =
-                    new ReserveStockRequest(
-                            item.getProductId(),
-                            item.getQuantity()
-                    );
+            ReserveStockRequest request = new ReserveStockRequest(item.getProductId(), item.getQuantity());
 
             inventoryIntegrationService.releaseStock(request);
         }
 
         order.setStatus(OrderStatus.CANCELLED);
 
-        return mapToResponse(
-                orderRepository.save(order)
-        );
+        return mapToResponse(orderRepository.save(order));
     }
 
     @Override
     @Transactional
     public OrderResponse paymentSuccess(Long orderId) {
 
-        Order order =
-                orderRepository.findById(orderId)
-                               .orElseThrow(() ->
-                                       new OrderNotFoundException(
-                                               "Order not found"));
+        Order order = orderRepository
+                .findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
         if (order.getStatus() != OrderStatus.CREATED) {
 
-            throw new RuntimeException(
-                    "Invalid order status"
-            );
+            throw new RuntimeException("Invalid order status");
         }
 
         // confirm inventory
         for (OrderItem item : order.getItems()) {
 
-            ReserveStockRequest request =
-                    new ReserveStockRequest(
-                            item.getProductId(),
-                            item.getQuantity()
-                    );
+            ReserveStockRequest request = new ReserveStockRequest(item.getProductId(), item.getQuantity());
 
             inventoryIntegrationService.confirmStock(request);
         }
 
-        order.setStatus(
-                OrderStatus.CONFIRMED
-        );
+        order.setStatus(OrderStatus.CONFIRMED);
 
-        return orderMapper.toResponse(
-                orderRepository.save(order)
-        );
+        return orderMapper.toResponse(orderRepository.save(order));
     }
 }

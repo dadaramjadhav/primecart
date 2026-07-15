@@ -1,0 +1,4 @@
+ALTER TABLE orders
+    MODIFY COLUMN status VARCHAR(50) NOT NULL;
+
+UPDATE orders SET status = 'PENDING' WHERE status = 'CREATED';
