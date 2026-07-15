@@ -19,20 +19,16 @@ public class ProductEventPublisher {
     public void publishProductCreated(ProductCreatedEvent event) {
         try {
             rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.PRODUCT_CREATED_ROUTING_KEY, event);
-
-//            rabbitPublisherMetrics.incrementProductEventsPublished();
-
+            
             log.info("ProductCreatedEvent published. eventId={}, productId={}", event.eventId(), event.productId());
         } catch (Exception exception) {
 
             rabbitPublisherMetrics.incrementProductEventPublishFailures();
 
-            log.error("Failed to publish ProductCreatedEvent. " + "eventId={}, productId={}", event.eventId(), event.productId(), exception);
+            log.error("Failed to publish ProductCreatedEvent. " + "eventId={}, productId={}", event.eventId(), event.productId(),
+                    exception);
 
             throw exception;
         }
-//        log.info("Publishing ProductCreatedEvent. eventId={}, productId={}", event.eventId(), event.productId());
-//
-//        rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.PRODUCT_CREATED_ROUTING_KEY, event);
     }
 }

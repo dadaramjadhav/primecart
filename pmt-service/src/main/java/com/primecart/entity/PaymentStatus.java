@@ -2,11 +2,9 @@ package com.primecart.entity;
 
 public enum PaymentStatus {
 
-    PENDING,
+    PENDING, COMPLETED, FAILED,
 
     SUCCESS,
-
-    FAILED,
 
     REFUNDED
 }
