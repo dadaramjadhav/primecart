@@ -1,8 +1,8 @@
 package com.primecart.messaging.consumer;
 
 import com.primecart.entity.Inventory;
-import com.primecart.entity.ProcessedEvent;
 import com.primecart.exception.InventoryReservationException;
+import com.primecart.messaging.entity.ProcessedEvent;
 import com.primecart.messaging.events.InventoryReservedEvent;
 import com.primecart.messaging.events.OrderCreatedEvent;
 import com.primecart.messaging.events.OrderItemEvent;
@@ -89,8 +89,8 @@ public class InventoryReservationService {
                 .toList();
         UUID reservationId = UUID.randomUUID();
 
-        InventoryReservedEvent reservedEvent = new InventoryReservedEvent(UUID.randomUUID(), "INVENTORY_RESERVED", 1, event.orderId(), reservationId,
-                Instant.now());
+        InventoryReservedEvent reservedEvent = new InventoryReservedEvent(UUID.randomUUID(), "INVENTORY_RESERVED", 1, event.orderId(),
+                reservationId, Instant.now());
 
         applicationEventPublisher.publishEvent(reservedEvent);
         log.info("Inventory reserved. orderId={}, reservationId={}, sourceEventId={}", event.orderId(), reservationId, event.eventId());

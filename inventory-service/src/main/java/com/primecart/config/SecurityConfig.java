@@ -15,23 +15,17 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        JwtAuthenticationConverter converter =
-                new JwtAuthenticationConverter();
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
-        converter.setJwtGrantedAuthoritiesConverter(
-                new KeycloakRoleConverter()
-        );
+        converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
 
         return http
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/actuator/**"
-                        ).permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**")
+                        .permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/inventory")
                         .hasRole("ADMIN")
@@ -47,21 +41,12 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.DELETE, "/api/inventory/**")
                         .hasRole("ADMIN")
-                        .requestMatchers(
-                                "/api/inventory/reserve",
-                                "/api/inventory/release",
-                                "/api/inventory/confirm"
-                        )
+                        .requestMatchers("/api/inventory/reserve", "/api/inventory/release", "/api/inventory/confirm")
                         .authenticated()
                         .anyRequest()
-                        .authenticated()
-                )
+                        .authenticated())
 
-                .oauth2ResourceServer(oauth ->
-                        oauth.jwt(jwt ->
-                                jwt.jwtAuthenticationConverter(converter)
-                        )
-                )
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
 
                 .build();
     }

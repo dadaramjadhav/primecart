@@ -1,8 +1,8 @@
 package com.primecart.messaging.consumer;
 
 import com.primecart.entity.Inventory;
-import com.primecart.entity.ProcessedEvent;
 import com.primecart.messaging.RabbitMqConstants;
+import com.primecart.messaging.entity.ProcessedEvent;
 import com.primecart.messaging.events.ProductCreatedEvent;
 import com.primecart.repository.InventoryRepository;
 import com.primecart.repository.ProcessedEventRepository;
@@ -26,13 +26,15 @@ public class ProductCreatedEventConsumer {
     @RabbitListener(queues = RabbitMqConstants.INVENTORY_PRODUCT_CREATED_QUEUE)
     public void consume(ProductCreatedEvent event) {
 
-        log.info("Received ProductCreatedEvent. eventId={}, productId={}, eventType={}", event.eventId(), event.productId(), event.eventType());
+        log.info("Received ProductCreatedEvent. eventId={}, productId={}, eventType={}", event.eventId(), event.productId(),
+                event.eventType());
 
         validate(event);
 
         if (processedEventRepository.existsByEventId(event.eventId())) {
 
-            log.warn("Duplicate event ignored. eventId={}, productId={}, eventType={}", event.eventId(), event.productId(), event.eventType());
+            log.warn("Duplicate event ignored. eventId={}, productId={}, eventType={}", event.eventId(), event.productId(),
+                    event.eventType());
 
             return;
         }

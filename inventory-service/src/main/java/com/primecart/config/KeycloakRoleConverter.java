@@ -20,23 +20,21 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
     @SuppressWarnings("unchecked")
     public Collection<GrantedAuthority> convert(Jwt jwt) {
 
-        Map<String, Object> realmAccess =
-                jwt.getClaim(SecurityConstants.REALM_ACCESS);
+        Map<String, Object> realmAccess = jwt.getClaim(SecurityConstants.REALM_ACCESS);
 
         if (realmAccess == null) {
             return Collections.emptyList();
         }
 
-        List<String> roles =
-                (List<String>) realmAccess.get(SecurityConstants.ROLES);
+        List<String> roles = (List<String>) realmAccess.get(SecurityConstants.ROLES);
 
         if (roles == null) {
             return Collections.emptyList();
         }
 
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(
-                        SecurityConstants.ROLE_PREFIX + role))
+        return roles
+                .stream()
+                .map(role -> new SimpleGrantedAuthority(SecurityConstants.ROLE_PREFIX + role))
                 .collect(Collectors.toSet());
     }
 }

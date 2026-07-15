@@ -14,5 +14,4 @@ public class InventoryResponse {
     private Integer availableQuantity;
 
     private Integer reservedQuantity;
-
 }

@@ -54,6 +54,40 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue orderPaymentCompletedQueue() {
+
+        return QueueBuilder
+                .durable(RabbitMqConstants.ORDER_PAYMENT_COMPLETED_QUEUE)
+                .build();
+    }
+
+    @Bean
+    public Binding orderPaymentCompletedBinding(Queue orderPaymentCompletedQueue, TopicExchange primeCartExchange) {
+
+        return BindingBuilder
+                .bind(orderPaymentCompletedQueue)
+                .to(primeCartExchange)
+                .with(RabbitMqConstants.PAYMENT_COMPLETED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue orderPaymentFailedQueue() {
+
+        return QueueBuilder
+                .durable(RabbitMqConstants.ORDER_PAYMENT_FAILED_QUEUE)
+                .build();
+    }
+
+    @Bean
+    public Binding orderPaymentFailedBinding(Queue orderPaymentFailedQueue, TopicExchange primeCartExchange) {
+
+        return BindingBuilder
+                .bind(orderPaymentFailedQueue)
+                .to(primeCartExchange)
+                .with(RabbitMqConstants.PAYMENT_FAILED_ROUTING_KEY);
+    }
+
+    @Bean
     public MessageConverter rabbitMessageConverter(ObjectMapper objectMapper) {
 
         return new Jackson2JsonMessageConverter(objectMapper);

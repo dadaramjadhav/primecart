@@ -24,24 +24,17 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional(readOnly = true)
     public InventoryResponse getInventory(Long productId) {
 
-        Inventory inventory =
-                getInventoryEntity(productId);
+        Inventory inventory = getInventoryEntity(productId);
 
         return mapToResponse(inventory);
     }
 
     @Override
-    public InventoryResponse increaseStock(
-            Long productId,
-            UpdateStockRequest request) {
+    public InventoryResponse increaseStock(Long productId, UpdateStockRequest request) {
 
-        Inventory inventory =
-                getInventoryEntity(productId);
+        Inventory inventory = getInventoryEntity(productId);
 
-        inventory.setAvailableQuantity(
-                inventory.getAvailableQuantity()
-                        + request.getQuantity()
-        );
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + request.getQuantity());
 
         inventoryRepository.save(inventory);
 
@@ -49,25 +42,16 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public InventoryResponse decreaseStock(
-            Long productId,
-            UpdateStockRequest request) {
+    public InventoryResponse decreaseStock(Long productId, UpdateStockRequest request) {
 
-        Inventory inventory =
-                getInventoryEntity(productId);
+        Inventory inventory = getInventoryEntity(productId);
 
-        if (inventory.getAvailableQuantity()
-                < request.getQuantity()) {
+        if (inventory.getAvailableQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException(
-                    "Insufficient stock"
-            );
+            throw new RuntimeException("Insufficient stock");
         }
 
-        inventory.setAvailableQuantity(
-                inventory.getAvailableQuantity()
-                        - request.getQuantity()
-        );
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - request.getQuantity());
 
         inventoryRepository.save(inventory);
 
@@ -79,12 +63,9 @@ public class InventoryServiceImpl implements InventoryService {
 
         Inventory inventory = getInventoryEntity(request.getProductId());
 
-        if (inventory.getAvailableQuantity()
-                < request.getQuantity()) {
+        if (inventory.getAvailableQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException(
-                    "Not enough stock available"
-            );
+            throw new RuntimeException("Not enough stock available");
         }
 
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() - request.getQuantity());
@@ -95,29 +76,18 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public void releaseStock(
-            ReserveStockRequest request) {
+    public void releaseStock(ReserveStockRequest request) {
 
-        Inventory inventory =
-                getInventoryEntity(request.getProductId());
+        Inventory inventory = getInventoryEntity(request.getProductId());
 
-        if (inventory.getReservedQuantity()
-                < request.getQuantity()) {
+        if (inventory.getReservedQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException(
-                    "Invalid release quantity"
-            );
+            throw new RuntimeException("Invalid release quantity");
         }
 
-        inventory.setReservedQuantity(
-                inventory.getReservedQuantity()
-                        - request.getQuantity()
-        );
+        inventory.setReservedQuantity(inventory.getReservedQuantity() - request.getQuantity());
 
-        inventory.setAvailableQuantity(
-                inventory.getAvailableQuantity()
-                        + request.getQuantity()
-        );
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + request.getQuantity());
 
         inventoryRepository.save(inventory);
     }
@@ -126,59 +96,42 @@ public class InventoryServiceImpl implements InventoryService {
 
         return inventoryRepository
                 .findByProductId(productId)
-                .orElseThrow(() ->
-                        new InventoryNotFoundException(
-                                "Inventory not found for product "
-                                        + productId
-                        ));
+                .orElseThrow(() -> new InventoryNotFoundException("Inventory not found for product " + productId));
     }
 
-    private InventoryResponse mapToResponse(
-            Inventory inventory) {
+    private InventoryResponse mapToResponse(Inventory inventory) {
 
-        return InventoryResponse.builder()
+        return InventoryResponse
+                .builder()
 
-                                .productId(
-                                        inventory.getProductId()
-                                )
+                .productId(inventory.getProductId())
 
-                                .availableQuantity(
-                                        inventory.getAvailableQuantity()
-                                )
+                .availableQuantity(inventory.getAvailableQuantity())
 
-                                .reservedQuantity(
-                                        inventory.getReservedQuantity()
-                                )
+                .reservedQuantity(inventory.getReservedQuantity())
 
-                                .build();
+                .build();
     }
 
     @Override
     @Transactional
-    public InventoryResponse createInventory(
-            CreateInventoryRequest request) {
+    public InventoryResponse createInventory(CreateInventoryRequest request) {
 
-        if (inventoryRepository.existsByProductId(
-                request.getProductId())) {
+        if (inventoryRepository.existsByProductId(request.getProductId())) {
 
-            throw new RuntimeException(
-                    "Inventory already exists for product "
-                            + request.getProductId()
-            );
+            throw new RuntimeException("Inventory already exists for product " + request.getProductId());
         }
 
-        Inventory inventory = Inventory.builder()
-                                       .productId(request.getProductId())
-                                       .availableQuantity(
-                                               request.getAvailableQuantity()
-                                       )
-                                       .reservedQuantity(0)
-                                       .createdAt(LocalDateTime.now())
-                                       .updatedAt(LocalDateTime.now())
-                                       .build();
+        Inventory inventory = Inventory
+                .builder()
+                .productId(request.getProductId())
+                .availableQuantity(request.getAvailableQuantity())
+                .reservedQuantity(0)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
 
-        Inventory saved =
-                inventoryRepository.save(inventory);
+        Inventory saved = inventoryRepository.save(inventory);
 
         return mapToResponse(saved);
     }
@@ -187,25 +140,17 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     public void confirmStock(ReserveStockRequest request) {
 
-        Inventory inventory =
-                inventoryRepository
-                        .findByProductId(request.getProductId())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Inventory not found"));
+        Inventory inventory = inventoryRepository
+                .findByProductId(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Inventory not found"));
 
-        if (inventory.getReservedQuantity()
-                < request.getQuantity()) {
+        if (inventory.getReservedQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException(
-                    "Not enough reserved stock");
+            throw new RuntimeException("Not enough reserved stock");
         }
 
         // only remove reservation
-        inventory.setReservedQuantity(
-                inventory.getReservedQuantity()
-                        - request.getQuantity()
-        );
+        inventory.setReservedQuantity(inventory.getReservedQuantity() - request.getQuantity());
 
         inventoryRepository.save(inventory);
     }

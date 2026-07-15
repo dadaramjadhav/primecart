@@ -19,87 +19,70 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping("/{productId}")
-    public ResponseEntity<InventoryResponse> getInventory(
-            @PathVariable Long productId) {
+    public ResponseEntity<InventoryResponse> getInventory(@PathVariable Long productId) {
 
         log.info("GET /api/inventory/{} - Get inventory request received", productId);
 
-        return ResponseEntity.ok(
-                inventoryService.getInventory(productId)
-        );
+        return ResponseEntity.ok(inventoryService.getInventory(productId));
     }
 
     @PutMapping("/{productId}/increase")
-    public ResponseEntity<InventoryResponse> increaseStock(
-            @PathVariable Long productId,
-            @RequestBody UpdateStockRequest request) {
+    public ResponseEntity<InventoryResponse> increaseStock(@PathVariable Long productId, @RequestBody UpdateStockRequest request) {
 
         log.info("PUT /api/inventory/{}/increase - Increase stock request received", productId);
 
-        return ResponseEntity.ok(
-                inventoryService.increaseStock(
-                        productId,
-                        request
-                )
-        );
+        return ResponseEntity.ok(inventoryService.increaseStock(productId, request));
     }
 
     @PutMapping("/{productId}/decrease")
-    public ResponseEntity<InventoryResponse> decreaseStock(
-            @PathVariable Long productId,
-            @RequestBody UpdateStockRequest request) {
+    public ResponseEntity<InventoryResponse> decreaseStock(@PathVariable Long productId, @RequestBody UpdateStockRequest request) {
 
         log.info("PUT /api/inventory/{}/decrease - Decrease stock request received", productId);
 
-        return ResponseEntity.ok(
-                inventoryService.decreaseStock(
-                        productId,
-                        request
-                )
-        );
+        return ResponseEntity.ok(inventoryService.decreaseStock(productId, request));
     }
 
     @PostMapping
-    public ResponseEntity<InventoryResponse> createInventory(
-            @RequestBody CreateInventoryRequest request) {
+    public ResponseEntity<InventoryResponse> createInventory(@RequestBody CreateInventoryRequest request) {
 
         log.info("POST /api/inventory - Create inventory request received");
 
-        return ResponseEntity.ok(
-                inventoryService.createInventory(request)
-        );
+        return ResponseEntity.ok(inventoryService.createInventory(request));
     }
 
     @PostMapping("/reserve")
-    public ResponseEntity<Void> reserveStock(
-            @RequestBody ReserveStockRequest request) {
+    public ResponseEntity<Void> reserveStock(@RequestBody ReserveStockRequest request) {
 
         log.info("POST /api/inventory/reserve - Reserve stock request received");
 
         inventoryService.reserveStock(request);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .ok()
+                .build();
     }
 
     @PostMapping("/release")
-    public ResponseEntity<Void> releaseStock(
-            @RequestBody ReserveStockRequest request) {
+    public ResponseEntity<Void> releaseStock(@RequestBody ReserveStockRequest request) {
 
         log.info("POST /api/inventory/release - Release stock request received");
 
         inventoryService.releaseStock(request);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .ok()
+                .build();
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<Void> confirmStock(
-            @RequestBody ReserveStockRequest request) {
+    public ResponseEntity<Void> confirmStock(@RequestBody ReserveStockRequest request) {
 
         log.info("POST /api/inventory/confirm - Confirm stock request received");
 
         inventoryService.confirmStock(request);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .ok()
+                .build();
     }
 }

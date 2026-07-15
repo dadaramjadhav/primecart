@@ -18,9 +18,10 @@ public class OrderCreatedEventConsumer {
     @RabbitListener(queues = RabbitMqConstants.INVENTORY_ORDER_CREATED_QUEUE)
     public void consume(OrderCreatedEvent event) {
 
-        log.info("Received OrderCreatedEvent. eventId={}, orderId={}, itemCount={}", event.eventId(), event.orderId(), event.items() != null ? event
-                                                                                                                                               .items()
-                                                                                                                                               .size() : 0);
+        log.info("Received OrderCreatedEvent. eventId={}, orderId={}, itemCount={}", event.eventId(), event.orderId(),
+                event.items() != null ? event
+                                        .items()
+                                        .size() : 0);
 
         validate(event);
 

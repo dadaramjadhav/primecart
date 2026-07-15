@@ -22,4 +22,7 @@ public class RabbitMqConstants {
     public static final String ORDER_INVENTORY_RESERVED_QUEUE = "order.inventory-reserved.queue";
 
     public static final String ORDER_INVENTORY_RESERVATION_FAILED_QUEUE = "order.inventory-reservation-failed.queue";
+    public static final String ORDER_PAYMENT_COMPLETED_QUEUE = "order.payment-completed.queue";
+
+    public static final String ORDER_PAYMENT_FAILED_QUEUE = "order.payment-failed.queue";
 }

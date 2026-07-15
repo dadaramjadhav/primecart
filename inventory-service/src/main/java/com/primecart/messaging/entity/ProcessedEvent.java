@@ -1,4 +1,4 @@
-package com.primecart.entity;
+package com.primecart.messaging.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

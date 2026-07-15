@@ -26,18 +26,12 @@ public class OpenApiConfig {
                         .contact(new Contact()
                                 .name("PrimeCart")
                                 .email("support@primecart.com"))
-                        .license(new License()
-                                .name("Apache 2.0")))
-                .components(new Components()
-                        .addSecuritySchemes(securitySchemeName,
-                                new SecurityScheme()
-                                        .name(securitySchemeName)
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")))
-                .addSecurityItem(
-                        new SecurityRequirement()
-                                .addList(securitySchemeName)
-                );
+                        .license(new License().name("Apache 2.0")))
+                .components(new Components().addSecuritySchemes(securitySchemeName, new SecurityScheme()
+                        .name(securitySchemeName)
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName));
     }
 }

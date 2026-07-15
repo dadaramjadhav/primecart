@@ -4,9 +4,7 @@ import com.primecart.entity.Order;
 import com.primecart.entity.OrderStatus;
 import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.messaging.entity.ProcessedEvent;
-import com.primecart.messaging.events.InventoryReservationFailedEvent;
-import com.primecart.messaging.events.InventoryReservedEvent;
-import com.primecart.messaging.events.PaymentRequestedEvent;
+import com.primecart.messaging.events.*;
 import com.primecart.messaging.repository.ProcessedEventRepository;
 import com.primecart.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +49,8 @@ public class OrderSagaService {
         //-------------------------------------------------------------
         if (order.getStatus() != OrderStatus.PENDING) {
 
-            log.warn("Ignoring InventoryReservedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(), event.eventId());
+            log.warn("Ignoring InventoryReservedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
+                    event.eventId());
 
             saveProcessedEvent(event.eventId(), event.eventType());
 
@@ -109,8 +108,8 @@ public class OrderSagaService {
         //-------------------------------------------------------------
         if (order.getStatus() != OrderStatus.PENDING) {
 
-            log.warn("Ignoring InventoryReservationFailedEvent. " + "orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
-                    event.eventId());
+            log.warn("Ignoring InventoryReservationFailedEvent. " + "orderId={}, currentStatus={}, eventId={}", order.getId(),
+                    order.getStatus(), event.eventId());
 
             saveProcessedEvent(event.eventId(), event.eventType());
 
@@ -128,7 +127,78 @@ public class OrderSagaService {
         //-------------------------------------------------------------
         saveProcessedEvent(event.eventId(), event.eventType());
 
-        log.warn("Order rejected due to inventory failure. " + "orderId={}, status={}, reason={}", order.getId(), order.getStatus(), event.reason());
+        log.warn("Order rejected due to inventory failure. " + "orderId={}, status={}, reason={}", order.getId(), order.getStatus(),
+                event.reason());
+    }
+
+    @Transactional
+    public void handlePaymentCompleted(PaymentCompletedEvent event) {
+
+        if (processedEventRepository.existsByEventId(event.eventId())) {
+
+            log.info("PaymentCompletedEvent already processed. eventId={}, orderId={}", event.eventId(), event.orderId());
+
+            return;
+        }
+
+        Order order = orderRepository
+                .findByIdForUpdate(event.orderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + event.orderId()));
+
+        if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
+
+            log.warn("Ignoring PaymentCompletedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
+                    event.eventId());
+
+            saveProcessedEvent(event.eventId(), event.eventType());
+
+            return;
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        saveProcessedEvent(event.eventId(), event.eventType());
+
+        log.info("Order confirmed. orderId={}, paymentId={}, paymentNumber={}", order.getId(), event.paymentId(), event.paymentNumber());
+    }
+
+    @Transactional
+    public void handlePaymentFailed(PaymentFailedEvent event) {
+
+        if (processedEventRepository.existsByEventId(event.eventId())) {
+
+            log.info("PaymentFailedEvent already processed. eventId={}, orderId={}", event.eventId(), event.orderId());
+
+            return;
+        }
+
+        Order order = orderRepository
+                .findByIdForUpdate(event.orderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + event.orderId()));
+
+        if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
+
+            log.warn("Ignoring PaymentFailedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
+                    event.eventId());
+
+            saveProcessedEvent(event.eventId(), event.eventType());
+
+            return;
+        }
+
+        order.setStatus(OrderStatus.PAYMENT_FAILED);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        saveProcessedEvent(event.eventId(), event.eventType());
+
+        InventoryReleaseRequestedEvent releaseEvent = new InventoryReleaseRequestedEvent(UUID.randomUUID(), "INVENTORY_RELEASE_REQUESTED",
+                1, order.getId(), event.reason(), Instant.now());
+
+        applicationEventPublisher.publishEvent(releaseEvent);
+
+        log.warn("Payment failed and inventory release requested. orderId={}, reason={}, releaseEventId={}", order.getId(), event.reason(),
+                releaseEvent.eventId());
     }
 
     private void saveProcessedEvent(UUID eventId, String eventType) {

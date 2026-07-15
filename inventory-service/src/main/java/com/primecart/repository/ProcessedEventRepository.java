@@ -1,6 +1,6 @@
 package com.primecart.repository;
 
-import com.primecart.entity.ProcessedEvent;
+import com.primecart.messaging.entity.ProcessedEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

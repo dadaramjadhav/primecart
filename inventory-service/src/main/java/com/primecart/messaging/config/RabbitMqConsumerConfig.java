@@ -60,7 +60,7 @@ public class RabbitMqConsumerConfig {
 
     @Bean
     public Binding inventoryOrderCreatedBinding(Queue inventoryOrderCreatedQueue, @Qualifier("primeCartSagaExchange") TopicExchange primeCartSagaExchange) {
-
+ 
         return BindingBuilder
                 .bind(inventoryOrderCreatedQueue)
                 .to(primeCartSagaExchange)
