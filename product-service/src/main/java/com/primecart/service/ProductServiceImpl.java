@@ -8,6 +8,7 @@ import com.primecart.entity.Category;
 import com.primecart.entity.Product;
 import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.mapper.ProductMapper;
+import com.primecart.messaging.events.ProductCreatedEvent;
 import com.primecart.metrics.ProductMetrics;
 import com.primecart.repository.BrandRepository;
 import com.primecart.repository.CategoryRepository;
@@ -18,13 +19,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +42,11 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
     private final ProductMetrics productMetrics;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @CacheEvict(value = "allProducts", allEntries = true)
     @Override
+    @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
 
         log.info("Creating product: {}", request.name());
@@ -61,6 +68,19 @@ public class ProductServiceImpl implements ProductService {
         Product product = productMapper.toEntity(request, category, brand);
 
         Product savedProduct = productRepository.save(product);
+
+        ProductCreatedEvent event =
+                new ProductCreatedEvent(
+                        UUID.randomUUID(),
+                        "PRODUCT_CREATED",
+                        savedProduct.getId(),
+                        savedProduct.getSku(),
+                        savedProduct.getName(),
+                        savedProduct.getPrice(),
+                        savedProduct.getStock(),
+                        Instant.now()
+                );
+        applicationEventPublisher.publishEvent(event);
 
         log.info("Product created with id: {}", savedProduct.getId());
 
