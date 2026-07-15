@@ -13,6 +13,9 @@ spring:
     password: 123
     listener:
       simple:
+        concurrency: 2
+        max-concurrency: 5
+        prefetch: 10
         acknowledge-mode: auto
         retry:
           enabled: true
@@ -32,6 +35,15 @@ spring:
     username: root
     password: Admin@12345
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+    hikari:
+      pool-name: InventoryHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      validation-timeout: 5000
 
   jpa:
     hibernate:
