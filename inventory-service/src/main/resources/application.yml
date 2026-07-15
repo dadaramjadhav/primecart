@@ -6,6 +6,21 @@ spring:
   application:
     name: inventory-service
 
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: 123
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 10s
+          max-attempts: 3
+        default-requeue-rejected: false
 
   boot:
     admin:
