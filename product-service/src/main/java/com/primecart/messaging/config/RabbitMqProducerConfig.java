@@ -11,10 +11,6 @@ public class RabbitMqProducerConfig {
     @Bean
     public TopicExchange primeCartExchange() {
 
-        return new TopicExchange(
-                RabbitMqConstants.PRIME_CART_EXCHANGE,
-                true,
-                false
-        );
+        return new TopicExchange(RabbitMqConstants.PRIME_CART_EXCHANGE, true, false);
     }
 }

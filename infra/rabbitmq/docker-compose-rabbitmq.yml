@@ -2,7 +2,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management
-    container_name: primecart-rabbitmq
+    container_name: rabbitmq
 
     ports:
       - "5672:5672"
