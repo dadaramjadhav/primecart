@@ -21,29 +21,30 @@ public class PaymentRequestedEventPublisher {
     public void publish(PaymentRequestedEvent event) {
 
         CorrelationData correlationData = new CorrelationData(event
-                .eventId()
-                .toString());
+                                                                      .eventId()
+                                                                      .toString());
 
         log.info("Publishing PaymentRequestedEvent. eventId={}, orderId={}, amount={}", event.eventId(), event.orderId(), event.amount());
 
-        rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.PAYMENT_REQUESTED_ROUTING_KEY, event, message -> {
+        rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.PAYMENT_REQUESTED_ROUTING_KEY, event,
+                                      message -> {
 
-            message
-                    .getMessageProperties()
-                    .setHeader("eventId", event
-                            .eventId()
-                            .toString());
+                                          message
+                                                  .getMessageProperties()
+                                                  .setHeader("eventId", event
+                                                          .eventId()
+                                                          .toString());
 
-            message
-                    .getMessageProperties()
-                    .setHeader("eventType", event.eventType());
+                                          message
+                                                  .getMessageProperties()
+                                                  .setHeader("eventType", event.eventType());
 
-            message
-                    .getMessageProperties()
-                    .setHeader("eventVersion", event.eventVersion());
+                                          message
+                                                  .getMessageProperties()
+                                                  .setHeader("eventVersion", event.eventVersion());
 
-            return message;
-        }, correlationData);
+                                          return message;
+                                      }, correlationData);
 
         log.info("PaymentRequestedEvent submitted to RabbitMQ. eventId={}, orderId={}", event.eventId(), event.orderId());
     }

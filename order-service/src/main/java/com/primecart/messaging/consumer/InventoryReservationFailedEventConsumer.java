@@ -19,7 +19,7 @@ public class InventoryReservationFailedEventConsumer {
     public void consume(InventoryReservationFailedEvent event) {
 
         log.info("Received InventoryReservationFailedEvent. " + "eventId={}, orderId={}, reason={}", event.eventId(), event.orderId(),
-                event.reason());
+                 event.reason());
 
         validate(event);
 

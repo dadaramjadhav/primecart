@@ -20,27 +20,29 @@ public class OrderCreatedEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publish(OrderCreatedEvent event) {
 
-        log.info("Publishing OrderCreatedEvent. eventId={}, orderId={}, orderNumber={}", event.eventId(), event.orderId(), event.orderNumber());
+        log.info("Publishing OrderCreatedEvent. eventId={}, orderId={}, orderNumber={}", event.eventId(), event.orderId(),
+                 event.orderNumber());
         CorrelationData correlationData = new CorrelationData(event
-                .eventId()
-                .toString());
-        rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.ORDER_CREATED_ROUTING_KEY, event, message -> {
-            message
-                    .getMessageProperties()
-                    .setHeader("eventId", event
-                            .eventId()
-                            .toString());
+                                                                      .eventId()
+                                                                      .toString());
+        rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.ORDER_CREATED_ROUTING_KEY, event,
+                                      message -> {
+                                          message
+                                                  .getMessageProperties()
+                                                  .setHeader("eventId", event
+                                                          .eventId()
+                                                          .toString());
 
-            message
-                    .getMessageProperties()
-                    .setHeader("eventType", event.eventType());
+                                          message
+                                                  .getMessageProperties()
+                                                  .setHeader("eventType", event.eventType());
 
-            message
-                    .getMessageProperties()
-                    .setHeader("eventVersion", event.eventVersion());
+                                          message
+                                                  .getMessageProperties()
+                                                  .setHeader("eventVersion", event.eventVersion());
 
-            return message;
-        }, correlationData);
+                                          return message;
+                                      }, correlationData);
 
         log.info("OrderCreatedEvent submitted to RabbitMQ. eventId={}, orderId={}", event.eventId(), event.orderId());
     }

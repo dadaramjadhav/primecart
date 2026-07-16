@@ -21,13 +21,13 @@ public class InventoryReleaseRequestedEventPublisher {
     public void publish(InventoryReleaseRequestedEvent event) {
 
         CorrelationData correlationData = new CorrelationData(event
-                .eventId()
-                .toString());
+                                                                      .eventId()
+                                                                      .toString());
 
         log.info("Publishing InventoryReleaseRequestedEvent. eventId={}, orderId={}", event.eventId(), event.orderId());
 
         rabbitTemplate.convertAndSend(RabbitMqConstants.PRIME_CART_EXCHANGE, RabbitMqConstants.INVENTORY_RELEASE_REQUESTED_ROUTING_KEY,
-                event, message -> {
+                                      event, message -> {
 
                     message
                             .getMessageProperties()

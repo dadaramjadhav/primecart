@@ -19,7 +19,7 @@ public class InventoryReservedEventConsumer {
     public void consume(InventoryReservedEvent event) {
 
         log.info("Received InventoryReservedEvent. eventId={}, orderId={}, reservationId={}", event.eventId(), event.orderId(),
-                event.reservationId());
+                 event.reservationId());
 
         validate(event);
 

@@ -9,11 +9,9 @@ import java.util.concurrent.Executor;
 @Configuration
 public class AsyncExecutorConfig {
 
-    @Bean(name = "inventoryExecutor")
-    public Executor inventoryExecutor() {
+    @Bean(name = "inventoryExecutor") public Executor inventoryExecutor() {
 
-        ThreadPoolTaskExecutor executor =
-                new ThreadPoolTaskExecutor();
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
         executor.setCorePoolSize(5);
         executor.setMaxPoolSize(10);

@@ -26,7 +26,7 @@ public class RabbitPublisherConfirmConfig {
         });
 
         rabbitTemplate.setReturnsCallback(
-                returned -> log.error("RabbitMQ returned unroutable message. exchange={}, routingKey={}, replyText={}", returned.getExchange(),
-                        returned.getRoutingKey(), returned.getReplyText()));
+                returned -> log.error("RabbitMQ returned unroutable message. exchange={}, routingKey={}, replyText={}",
+                                      returned.getExchange(), returned.getRoutingKey(), returned.getReplyText()));
     }
 }

@@ -50,7 +50,7 @@ public class OrderSagaService {
         if (order.getStatus() != OrderStatus.PENDING) {
 
             log.warn("Ignoring InventoryReservedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
-                    event.eventId());
+                     event.eventId());
 
             saveProcessedEvent(event.eventId(), event.eventType());
 
@@ -72,7 +72,8 @@ public class OrderSagaService {
         // Create Payment Requested Event
         //-------------------------------------------------------------
         PaymentRequestedEvent paymentRequestedEvent = new PaymentRequestedEvent(UUID.randomUUID(), "PAYMENT_REQUESTED", 1, order.getId(),
-                order.getCustomerId(), order.getTotalAmount(), "CARD", Instant.now());
+                                                                                order.getCustomerId(), order.getTotalAmount(), "CARD",
+                                                                                Instant.now());
 
         //-------------------------------------------------------------
         // Publish Internal Spring Event
@@ -80,7 +81,7 @@ public class OrderSagaService {
         applicationEventPublisher.publishEvent(paymentRequestedEvent);
 
         log.info("Inventory reserved and payment requested. " + "orderId={}, status={}, reservationId={}, paymentEventId={}", order.getId(),
-                order.getStatus(), event.reservationId(), paymentRequestedEvent.eventId());
+                 order.getStatus(), event.reservationId(), paymentRequestedEvent.eventId());
     }
 
     @Transactional
@@ -109,7 +110,7 @@ public class OrderSagaService {
         if (order.getStatus() != OrderStatus.PENDING) {
 
             log.warn("Ignoring InventoryReservationFailedEvent. " + "orderId={}, currentStatus={}, eventId={}", order.getId(),
-                    order.getStatus(), event.eventId());
+                     order.getStatus(), event.eventId());
 
             saveProcessedEvent(event.eventId(), event.eventType());
 
@@ -128,7 +129,7 @@ public class OrderSagaService {
         saveProcessedEvent(event.eventId(), event.eventType());
 
         log.warn("Order rejected due to inventory failure. " + "orderId={}, status={}, reason={}", order.getId(), order.getStatus(),
-                event.reason());
+                 event.reason());
     }
 
     @Transactional
@@ -148,7 +149,7 @@ public class OrderSagaService {
         if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
 
             log.warn("Ignoring PaymentCompletedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
-                    event.eventId());
+                     event.eventId());
 
             saveProcessedEvent(event.eventId(), event.eventType());
 
@@ -180,7 +181,7 @@ public class OrderSagaService {
         if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
 
             log.warn("Ignoring PaymentFailedEvent. orderId={}, currentStatus={}, eventId={}", order.getId(), order.getStatus(),
-                    event.eventId());
+                     event.eventId());
 
             saveProcessedEvent(event.eventId(), event.eventType());
 
@@ -193,12 +194,12 @@ public class OrderSagaService {
         saveProcessedEvent(event.eventId(), event.eventType());
 
         InventoryReleaseRequestedEvent releaseEvent = new InventoryReleaseRequestedEvent(UUID.randomUUID(), "INVENTORY_RELEASE_REQUESTED",
-                1, order.getId(), event.reason(), Instant.now());
+                                                                                         1, order.getId(), event.reason(), Instant.now());
 
         applicationEventPublisher.publishEvent(releaseEvent);
 
         log.warn("Payment failed and inventory release requested. orderId={}, reason={}, releaseEventId={}", order.getId(), event.reason(),
-                releaseEvent.eventId());
+                 releaseEvent.eventId());
     }
 
     private void saveProcessedEvent(UUID eventId, String eventType) {
