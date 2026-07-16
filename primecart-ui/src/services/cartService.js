@@ -12,6 +12,10 @@ export async function getCart() {
   return response.data
 }
 
+export async function clearCart() {
+  await api.delete("/api/cart")
+}
+
 export async function removeCartItem(itemId) {
   const response = await api.delete(`/api/cart/items/${itemId}`)
   return response.data

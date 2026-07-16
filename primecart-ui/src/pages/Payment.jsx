@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
 import { getPayment, paymentSuccess, paymentFailed } from "../services/paymentService"
+import { clearCart } from "../services/cartService"
 
 function Payment() {
   const { orderId } = useParams()
@@ -25,6 +26,7 @@ function Payment() {
   async function payNow() {
     try {
       await paymentSuccess(payment.id)
+      await clearCart()
 
       navigate(`/orders/${orderId}`)
     } catch (error) {

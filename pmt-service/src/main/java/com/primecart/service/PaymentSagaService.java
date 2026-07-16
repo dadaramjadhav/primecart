@@ -4,17 +4,14 @@ import com.primecart.entity.Payment;
 import com.primecart.entity.PaymentMethod;
 import com.primecart.entity.PaymentStatus;
 import com.primecart.messaging.entity.ProcessedEvent;
-import com.primecart.messaging.events.PaymentCompletedEvent;
 import com.primecart.messaging.events.PaymentRequestedEvent;
 import com.primecart.messaging.repository.ProcessedEventRepository;
 import com.primecart.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -25,8 +22,6 @@ public class PaymentSagaService {
 
     private final PaymentRepository paymentRepository;
     private final ProcessedEventRepository processedEventRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
-
     @Transactional
     public void processPayment(PaymentRequestedEvent event) {
 
@@ -57,7 +52,9 @@ public class PaymentSagaService {
         payment.setAmount(event.amount());
         payment.setCustomerId(event.customerId());
         payment.setMethod(PaymentMethod.valueOf(event.paymentMethod()));
-        payment.setStatus(PaymentStatus.COMPLETED);
+        // Creating a payment request must not complete the payment. The user
+        // explicitly completes it from the payment page via the Pay Now action.
+        payment.setStatus(PaymentStatus.PENDING);
         payment.setCreatedAt(LocalDateTime.now());
         payment.setUpdatedAt(LocalDateTime.now());
 
@@ -65,12 +62,7 @@ public class PaymentSagaService {
 
         saveProcessedEvent(event);
 
-        PaymentCompletedEvent completedEvent = new PaymentCompletedEvent(UUID.randomUUID(), "PAYMENT_COMPLETED", 1,
-                savedPayment.getOrderId(), savedPayment.getId(), savedPayment.getPaymentNumber(), savedPayment.getAmount(), Instant.now());
-
-        applicationEventPublisher.publishEvent(completedEvent);
-
-        log.info("Payment completed. orderId={}, paymentId={}, paymentNumber={}", savedPayment.getOrderId(), savedPayment.getId(),
+        log.info("Payment created and awaiting user action. orderId={}, paymentId={}, paymentNumber={}", savedPayment.getOrderId(), savedPayment.getId(),
                 savedPayment.getPaymentNumber());
     }
 

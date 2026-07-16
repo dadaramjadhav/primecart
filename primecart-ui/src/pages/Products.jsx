@@ -28,7 +28,7 @@ function Products() {
               <img src={product.imageUrl} alt={product.name} />
             </Link>
 
-            <h2 className="text-xl font-semibold">{product.name}</h2>
+            <h2 className="text-xl font-semibold">{product.name}(id:{product.id})</h2>
 
             <p className="mt-2 text-gray-500">{product.description}</p>
 

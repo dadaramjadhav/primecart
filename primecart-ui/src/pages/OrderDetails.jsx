@@ -9,18 +9,37 @@ function OrderDetails() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
+    let refreshTimer
+    let refreshAttempts = 0
+
     async function loadOrder() {
       try {
         const data = await getOrder(id)
+
+        if (cancelled) return
+
         setOrder(data)
+
+        const isPaymentBeingPrepared = ["PENDING", "INVENTORY_RESERVED"].includes(data.status)
+
+        if (isPaymentBeingPrepared && refreshAttempts < 30) {
+          refreshAttempts += 1
+          refreshTimer = window.setTimeout(loadOrder, 1000)
+        }
       } catch (error) {
         console.error(error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     loadOrder()
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(refreshTimer)
+    }
   }, [id])
 
   if (loading) {
@@ -88,8 +107,11 @@ function OrderDetails() {
             ))}
           </tbody>
         </table>
-        {order.status === "CREATED" && (
-          <Link to={`/payments/${order.id}`} className="bg-green-600 text-white px-5 py-2 rounded">
+        {["PENDING", "INVENTORY_RESERVED"].includes(order.status) && (
+          <p className="mt-6 text-gray-600">Preparing your payment...</p>
+        )}
+        {["CREATED", "PAYMENT_PENDING"].includes(order.status) && (
+          <Link to={`/payments/${order.id}`} className="inline-block mt-6 bg-green-600 text-white px-5 py-2 rounded">
             Pay Now
           </Link>
         )}
