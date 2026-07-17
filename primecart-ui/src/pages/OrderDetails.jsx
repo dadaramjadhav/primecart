@@ -1,51 +1,23 @@
-import { useEffect, useState } from "react"
+import useOrder from "../hooks/useOrder"
 import { Link, useParams } from "react-router-dom"
-import { getOrder } from "../services/orderService"
 
 function OrderDetails() {
   const { id } = useParams()
+  const { order, isLoading, isError, error, isFetching } = useOrder(id)
 
-  const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    let refreshTimer
-    let refreshAttempts = 0
-
-    async function loadOrder() {
-      try {
-        const data = await getOrder(id)
-
-        if (cancelled) return
-
-        setOrder(data)
-
-        const isPaymentBeingPrepared = ["PENDING", "INVENTORY_RESERVED"].includes(data.status)
-
-        if (isPaymentBeingPrepared && refreshAttempts < 30) {
-          refreshAttempts += 1
-          refreshTimer = window.setTimeout(loadOrder, 1000)
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    loadOrder()
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(refreshTimer)
-    }
-  }, [id])
-
-  if (loading) {
+  if (isLoading) {
     return <div className="p-8 text-center">Loading...</div>
   }
 
+  if (isError) {
+    return (
+      <div className="py-20 text-center">
+        <h2 className="text-2xl font-semibold text-red-600">Unable to load order</h2>
+
+        <p className="mt-3 text-gray-500">{error?.message ?? "Something went wrong."}</p>
+      </div>
+    )
+  }
   if (!order) {
     return <div className="p-8 text-center">Order not found.</div>
   }
@@ -53,8 +25,10 @@ function OrderDetails() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="bg-white shadow rounded-xl p-6">
-        <h1 className="text-3xl font-bold mb-6">Order Details</h1>
-
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Order Details</h1>
+          {isFetching && <span className="text-sm text-gray-500">Updating...</span>}
+        </div>
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div>
             <p className="text-gray-500">Order Number</p>

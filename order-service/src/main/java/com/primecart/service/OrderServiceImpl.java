@@ -472,7 +472,8 @@ public class OrderServiceImpl implements OrderService {
                 .findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
-        if (order.getStatus() != OrderStatus.CREATED) {
+        if (order.getStatus() != OrderStatus.CREATED
+                && order.getStatus() != OrderStatus.PAYMENT_PENDING) {
 
             throw new RuntimeException("Invalid order status");
         }

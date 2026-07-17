@@ -11,6 +11,7 @@ import ProductDetails from "../pages/ProductDetails"
 import ProtectedRoute from "./ProtectedRoute"
 import OrderDetails from "../pages/OrderDetails"
 import Payment from "../pages/Payment"
+import NotFound from "../pages/NotFound"
 
 function AppRoutes() {
   return (
@@ -56,6 +57,7 @@ function AppRoutes() {
           <Route path="/orders" element={<Orders />} />
 
           <Route path="/login" element={<Login />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

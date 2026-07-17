@@ -1,32 +1,16 @@
-import { useEffect, useState } from "react"
+import usePayment from "../hooks/usePayment"
 import { useNavigate, useParams } from "react-router-dom"
-
-import { getPayment, paymentSuccess, paymentFailed } from "../services/paymentService"
-import { clearCart } from "../services/cartService"
 
 function Payment() {
   const { orderId } = useParams()
 
   const navigate = useNavigate()
 
-  const [payment, setPayment] = useState(null)
-
-  useEffect(() => {
-    async function loadPayment() {
-      try {
-        const data = await getPayment(orderId)
-        setPayment(data)
-      } catch (error) {
-        console.error(error)
-      }
-    }
-    loadPayment()
-  }, [orderId])
-
+  const { payment, completePayment, failPayment, isError, isFetching, isLoading, error, isSubmitting } =
+    usePayment(orderId)
   async function payNow() {
     try {
-      await paymentSuccess(payment.id)
-      await clearCart()
+      await completePayment(payment.id)
 
       navigate(`/orders/${orderId}`)
     } catch (error) {
@@ -34,9 +18,9 @@ function Payment() {
     }
   }
 
-  async function failPayment() {
+  async function handleFailedPayment() {
     try {
-      await paymentFailed(payment.id)
+      await failPayment(payment.id)
 
       navigate(`/orders/${orderId}`)
     } catch (error) {
@@ -44,15 +28,26 @@ function Payment() {
     }
   }
 
-  if (!payment) {
+  if (isLoading) {
     return <div className="text-center mt-20">Loading...</div>
   }
+  if (isError) {
+    return (
+      <div className="py-20 text-center">
+        <h2 className="text-2xl font-semibold text-red-600">Unable to load payment</h2>
 
+        <p className="mt-3 text-gray-500">{error?.message ?? "Something went wrong."}</p>
+      </div>
+    )
+  }
+  if (!payment) {
+    return <div className="mt-20 text-center">Payment not found.</div>
+  }
   return (
     <div className="max-w-xl mx-auto mt-10">
       <div className="bg-white shadow-lg rounded-xl p-8">
         <h1 className="text-3xl font-bold mb-8">Payment</h1>
-
+        {isFetching && <span className="text-sm text-gray-500">Updating...</span>}
         <div className="space-y-4">
           <div className="flex justify-between">
             <span>Payment Number</span>
@@ -76,13 +71,20 @@ function Payment() {
         </div>
 
         <div className="flex gap-4 mt-10">
-          <button onClick={payNow} className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700">
-            Pay Now
+          <button
+            type="button"
+            onClick={payNow}
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg bg-green-600 py-3 text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {isSubmitting ? "Processing..." : "Pay Now"}
           </button>
-
-          <button onClick={failPayment} className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700">
-            Fail Payment
-          </button>
+          <button
+            type="button"
+            onClick={handleFailedPayment}
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg bg-red-600 py-3 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {isSubmitting ? "Processing..." : "Fail Payment"}
+          </button>{" "}
         </div>
       </div>
     </div>

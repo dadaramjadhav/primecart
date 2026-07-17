@@ -1,8 +1,10 @@
-import keycloak from "../auth/keycloak"
+
 import { Navigate } from "react-router-dom"
+import useAuth from "../hooks/useAuth"
 
 function ProtectedRoute({ children }) {
-  if (!keycloak.authenticated) {
+  const {authenticated}= useAuth()
+  if (!authenticated) {
     return <Navigate to="/login" />
   }
 
