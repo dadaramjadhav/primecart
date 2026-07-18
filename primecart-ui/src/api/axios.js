@@ -7,6 +7,8 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 })
+
+//adding token to every request
 api.interceptors.request.use((config) => {
   if (keycloak.token) {
     config.headers.Authorization = `Bearer ${keycloak.token}`
@@ -15,11 +17,11 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// error handling
 api.interceptors.response.use(
   (response) => {
     return response
   },
-
   async (error) => {
     const originalRequest = error.config
     const status = error.response?.status

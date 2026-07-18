@@ -51,16 +51,13 @@ function Navbar() {
             <Link to="/login">Login</Link>
           )}
 
-          {user && (
-            <span className="text-sm text-slate-500 dark:text-slate-400">Welcome, {user.given_name}</span>
-          )}
+          {user && <span className="text-sm text-slate-500 dark:text-slate-400">Welcome, {user.given_name}</span>}
 
           {authenticated && (
             <button className="cursor-pointer transition-colors hover:text-blue-600" onClick={logout}>
               Logout
             </button>
           )}
-
         </div>
 
         <button

@@ -1,4 +1,4 @@
-import api from "../api/axios"
+import api from "../../../api/axios"
 import { normalizeServiceError } from "./serviceError"
 
 export async function getMyOrders(page = 0, size = 3) {

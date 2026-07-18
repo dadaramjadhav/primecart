@@ -1,4 +1,4 @@
-import api from "../api/axios"
+import api from "../../../api/axios"
 import { normalizeServiceError } from "./serviceError"
 
 export const getProducts = async (page = 0, size = 8) => {

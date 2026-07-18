@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { showSuccess } from "../utils/notifications"
+import { showSuccess } from "../../../shared/utils/notifications"
 import useCart from "../hooks/useCart"
 import useProducts from "../hooks/useProducts"
 import { useEffect, useRef } from "react"
@@ -26,7 +26,8 @@ function Products() {
         }
       },
       {
-        rootMargin: "200px",
+        rootMargin: "0px",
+        threshold: 0.5,
       },
     )
 

@@ -1,6 +1,6 @@
 import useCreateOrder from "../hooks/useCreateOrder"
 import { useNavigate } from "react-router-dom"
-import { showError } from "../utils/notifications"
+import { showError } from "../../../shared/utils/notifications"
 import useCart from "../hooks/useCart"
 
 function Cart() {

@@ -6,7 +6,7 @@ function useProduct(productId) {
     queryKey: ["products", productId],
     queryFn: () => getProduct(productId),
     enabled: Boolean(productId),
-    staleTime: 30_000,
+    staleTime: 10_000,
   })
 
   return {

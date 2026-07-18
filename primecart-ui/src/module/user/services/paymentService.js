@@ -1,4 +1,4 @@
-import api from "../api/axios"
+import api from "../../../api/axios"
 
 export async function getPayment(orderId) {
   const response = await api.get(`/api/payments/order/${orderId}`)

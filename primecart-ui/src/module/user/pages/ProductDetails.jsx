@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom"
 import useCart from "../hooks/useCart"
 import useAuth from "../hooks/useAuth"
 import useProduct from "../hooks/useProduct"
-import { showSuccess } from "../utils/notifications"
+import { showSuccess } from "../../../shared/utils/notifications"
 
 function ProductDetails() {
   const { id } = useParams()

@@ -1,6 +1,7 @@
 import { Component } from "react"
 
-class ErrorBoundary extends Component {
+// error boundary for exception handling
+ class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
 

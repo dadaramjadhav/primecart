@@ -11,7 +11,7 @@ function useProducts(pageSize = 8) {
 
       return nextPage < lastPage.totalPages ? nextPage : undefined
     },
-    staleTime: 30_000,
+    staleTime: 10_000,
   })
   const products = productsQuery.data?.pages.flatMap((page) => page.content) ?? []
   return {

@@ -7,7 +7,7 @@ function useOrders(currentPage, pageSize = 3) {
     queryKey: ["my-orders", currentPage, pageSize],
     queryFn: () => getMyOrders(currentPage, pageSize),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: 10_000,
   })
 
   return {

@@ -4,7 +4,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@ta
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { ToastContainer } from "react-toastify"
 import { shouldRetryQuery } from "./api/queryRetry"
-import ErrorBoundary from "./components/ErrorBoundary"
+import ErrorBoundary from "./module/user/components/ErrorBoundary"
 
 import App from "./App"
 import "./index.css"
