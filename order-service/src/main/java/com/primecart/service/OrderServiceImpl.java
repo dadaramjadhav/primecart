@@ -1,8 +1,6 @@
 package com.primecart.service;
 
 import com.primecart.client.CartClient;
-import com.primecart.client.PaymentClient;
-import com.primecart.client.ProductClient;
 import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.response.CartItemResponse;
 import com.primecart.dto.response.CartResponse;
@@ -22,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -41,12 +40,10 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
-    private final ProductClient productClient;
     private final CartClient cartClient;
-    private final PaymentClient paymentClient;
     private final InventoryIntegrationService inventoryIntegrationService;
     private final ApplicationEventPublisher applicationEventPublisher;
-    
+
     private String getCurrentUserId() {
 
         Authentication authentication = SecurityContextHolder
@@ -60,6 +57,7 @@ public class OrderServiceImpl implements OrderService {
                 .getSubject();
     }
 
+    @PreAuthorize("hasRole('ORDER_READ_OWN')")
     @Override
     public Page<OrderResponse> getMyOrders(Pageable pageable) {
 
@@ -70,6 +68,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderMapper::toResponse);
     }
 
+    @PreAuthorize("hasRole('ORDER_CREATE')")
     @Override
     @Transactional
     public OrderResponse createOrder() {
@@ -119,15 +118,17 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        OrderCreatedEvent event = new OrderCreatedEvent(UUID.randomUUID(), "ORDER_CREATED", 1, savedOrder.getId(), savedOrder.getOrderNumber(),
-                savedOrder.getCustomerId(), savedOrder.getTotalAmount(), mapItems(savedOrder.getItems()), Instant.now());
+        OrderCreatedEvent event = new OrderCreatedEvent(UUID.randomUUID(), "ORDER_CREATED", 1, savedOrder.getId(),
+                                                        savedOrder.getOrderNumber(), savedOrder.getCustomerId(),
+                                                        savedOrder.getTotalAmount(), mapItems(savedOrder.getItems()), Instant.now());
 
         //-------------------------------------------------------------
         // Publish In-Process Event
         //-------------------------------------------------------------
         applicationEventPublisher.publishEvent(event);
 
-        log.info("Pending order created. orderId={}, orderNumber={}, eventId={}", savedOrder.getId(), savedOrder.getOrderNumber(), event.eventId());
+        log.info("Pending order created. orderId={}, orderNumber={}, eventId={}", savedOrder.getId(), savedOrder.getOrderNumber(),
+                 event.eventId());
 
         return mapToResponse(savedOrder);
     }
@@ -262,6 +263,7 @@ public class OrderServiceImpl implements OrderService {
 //        return mapToResponse(saved);
 //    }
 
+    @PreAuthorize("hasAnyRole('ORDER_READ_OWN', 'ORDER_READ_ALL')")
     @Override
     public OrderResponse getOrderById(Long id) {
 
@@ -274,6 +276,7 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toResponse(order);
     }
 
+    @PreAuthorize("hasAnyRole('ORDER_READ_OWN', 'ORDER_READ_ALL')")
     @Override
     public OrderResponse getOrderByOrderNumber(String orderNumber) {
 
@@ -286,6 +289,7 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toResponse(order);
     }
 
+    @PreAuthorize("hasRole('ORDER_READ_ALL')")
     @Override
     public Page<OrderResponse> getAllOrders(Pageable pageable) {
 
@@ -296,6 +300,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderMapper::toResponse);
     }
 
+    @PreAuthorize("hasRole('ORDER_READ_ALL')")
     @Override
     public List<OrderResponse> getOrdersByCustomerId(String customerId) {
 
@@ -308,6 +313,7 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
+    @PreAuthorize("hasRole('ORDER_READ_ALL')")
     @Override
     public Page<OrderResponse> getOrdersByStatus(OrderStatus status, Pageable pageable) {
 
@@ -318,6 +324,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderMapper::toResponse);
     }
 
+    @PreAuthorize("hasRole('ORDER_DELETE')")
     @Override
     public void deleteOrder(Long id) {
 
@@ -332,6 +339,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("Order deleted successfully with id: {}", id);
     }
 
+    @PreAuthorize("hasRole('ORDER_CANCEL')")
     @Override
     @Transactional
     public OrderResponse cancelOrder(Long orderId) {
@@ -371,6 +379,7 @@ public class OrderServiceImpl implements OrderService {
         return mapToResponse(updatedOrder);
     }
 
+    @PreAuthorize("hasRole('ORDER_CONFIRM')")
     @Override
     @Transactional
     public OrderResponse confirmOrder(Long orderId) {
@@ -431,14 +440,15 @@ public class OrderServiceImpl implements OrderService {
                 .orderNumber(order.getOrderNumber())
                 .customerId(order.getCustomerId())
                 .status(order
-                        .getStatus()
-                        .toString())
+                                .getStatus()
+                                .toString())
                 .totalAmount(order.getTotalAmount())
                 .items(items)
                 .createdAt(order.getCreatedAt())
                 .build();
     }
 
+    @PreAuthorize("hasRole('ORDER_PAYMENT_FAIL')")
     @Override
     @Transactional
     public OrderResponse paymentFailed(Long orderId) {
@@ -447,10 +457,16 @@ public class OrderServiceImpl implements OrderService {
                 .findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
-        if (order.getStatus() == OrderStatus.CANCELLED) {
-            return mapToResponse(order);
+//        if (order.getStatus() == OrderStatus.CANCELLED) {
+//            return mapToResponse(order);
+//        }
+        if (order.getStatus() == OrderStatus.PAYMENT_FAILED) {
+            return orderMapper.toResponse(order);
         }
+        if (order.getStatus() != OrderStatus.PAYMENT_PENDING && order.getStatus() != OrderStatus.CREATED) {
 
+            throw new IllegalStateException("Payment cannot fail for order in status: " + order.getStatus());
+        }
         // Release inventory
         for (OrderItem item : order.getItems()) {
 
@@ -459,11 +475,13 @@ public class OrderServiceImpl implements OrderService {
             inventoryIntegrationService.releaseStock(request);
         }
 
-        order.setStatus(OrderStatus.CANCELLED);
+        order.setStatus(OrderStatus.PAYMENT_FAILED);
+//        order.setStatus(OrderStatus.CANCELLED);
 
         return mapToResponse(orderRepository.save(order));
     }
 
+    @PreAuthorize("hasRole('ORDER_PAYMENT_SUCCESS')")
     @Override
     @Transactional
     public OrderResponse paymentSuccess(Long orderId) {
@@ -472,8 +490,7 @@ public class OrderServiceImpl implements OrderService {
                 .findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
-        if (order.getStatus() != OrderStatus.CREATED
-                && order.getStatus() != OrderStatus.PAYMENT_PENDING) {
+        if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.PAYMENT_PENDING) {
 
             throw new RuntimeException("Invalid order status");
         }
@@ -489,5 +506,61 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CONFIRMED);
 
         return orderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ORDER_PAYMENT_RETRY')")
+    @Transactional
+    public OrderResponse retryPayment(Long orderId) {
+
+        Order order = orderRepository
+                .findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+//        validateOrderAccess(order);
+
+        if (order.getStatus() != OrderStatus.PAYMENT_FAILED) {
+            throw new IllegalStateException("Only payment-failed orders can retry payment");
+        }
+
+        for (OrderItem item : order.getItems()) {
+
+            ReserveStockRequest request = new ReserveStockRequest(item.getProductId(), item.getQuantity());
+
+            inventoryIntegrationService.reserveStock(request);
+        }
+
+        order.setStatus(OrderStatus.PAYMENT_PENDING);
+
+        return orderMapper.toResponse(orderRepository.save(order));
+    }
+
+    private boolean hasAuthority(String authority) {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        return authentication != null && authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(grantedAuthority -> grantedAuthority
+                        .getAuthority()
+                        .equals(authority));
+    }
+
+    private void validateOrderAccess(Order order) {
+
+        if (hasAuthority("ROLE_ORDER_READ_ALL")) {
+            return;
+        }
+
+        String currentUserId = getCurrentUserId();
+
+        if (!order
+                .getCustomerId()
+                .equals(currentUserId)) {
+            throw new OrderNotFoundException("Order not found");
+        }
     }
 }

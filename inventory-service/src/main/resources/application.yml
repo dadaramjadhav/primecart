@@ -1,6 +1,10 @@
 server:
   port: 8084
 
+primecart:
+  security:
+    jwt:
+      audience: primecart-api
 
 spring:
   application:
@@ -34,6 +38,8 @@ spring:
     admin:
       client:
         url: http://localhost:9191
+        username: admin
+        password: 123
 
   datasource:
     url: jdbc:mysql://localhost:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
@@ -69,13 +75,12 @@ spring:
 management:
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
   endpoints:
     web:
       exposure:
-        include: "*"
-  #        include: health,info,metrics,prometheus,caches
+        include: health,info,metrics,prometheus,caches
 
   tracing:
     enabled: true
@@ -92,8 +97,8 @@ management:
 
 info:
   app:
-    name: Cart Service
-    description: PrimeCart Cart Microservice
+    name: Inventory Service
+    description: PrimeCart inventory Microservice
     version: 1.0.0
 
 logging:

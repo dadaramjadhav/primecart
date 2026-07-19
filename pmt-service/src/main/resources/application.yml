@@ -1,6 +1,11 @@
 server:
   port: 8085
 
+primecart:
+  security:
+    jwt:
+      audience: primecart-api
+
 spring:
   application:
     name: payment-service
@@ -34,6 +39,8 @@ spring:
     admin:
       client:
         url: http://localhost:9191
+        username: admin
+        password: 123
 
   datasource:
     url: jdbc:mysql://localhost:3306/payment_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
@@ -60,6 +67,18 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/primecart
 
+      client:
+        registration:
+          payment-service-client:
+            provider: keycloak
+            client-id: primecart-payment-service
+            client-secret: 0tMEQ0grjTGL16CdWGINY3wXezPg8zz2
+            authorization-grant-type: client_credentials
+
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/realms/primecart/protocol/openid-connect/token
+
   cloud:
     openfeign:
       micrometer:
@@ -68,13 +87,12 @@ spring:
 management:
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
   endpoints:
     web:
       exposure:
-        include: "*"
-  #        include: health,info,metrics,prometheus,caches
+        include: health,info,metrics,prometheus,caches
 
   tracing:
     enabled: true
@@ -100,6 +118,7 @@ logging:
     root: INFO
     com.primecart: DEBUG
     org.springframework.web: INFO
+    com.primecart.config.OrderClientCredentialsFeignConfig: TRACE
 #    org.hibernate.SQL: DEBUG
 #    org.hibernate.orm.jdbc.bind: TRACE
 #    org.springframework.security: DEBUG

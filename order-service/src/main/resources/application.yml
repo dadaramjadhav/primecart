@@ -1,6 +1,11 @@
 server:
   port: 8082
 
+primecart:
+  security:
+    jwt:
+      audience: primecart-api
+
 spring:
   application:
     name: order-service
@@ -35,6 +40,8 @@ spring:
     admin:
       client:
         url: http://localhost:9191
+        username: admin
+        password: 123
 
   datasource:
     url: jdbc:mysql://localhost:3306/orderdb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
@@ -61,6 +68,17 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/primecart
 
+      client:
+        registration:
+          order-service-client:
+            provider: keycloak
+            client-id: primecart-order-service
+            client-secret: 2WZ1z2wZtsLeuvmoGb8Jz5dkGBZHwAmq
+            authorization-grant-type: client_credentials
+
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/realms/primecart/protocol/openid-connect/token
   cloud:
     openfeign:
       micrometer:
@@ -73,19 +91,20 @@ spring:
 management:
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
   endpoints:
     web:
       exposure:
         include:
-          - "*"
           - health
           - info
           - prometheus
+          - metrics
+          - caches
           - circuitbreakers
           - circuitbreakerevents
-  #        include: health,info,metrics,prometheus,caches
+
   health:
     circuitbreakers:
       enabled: true

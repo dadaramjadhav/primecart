@@ -14,4 +14,6 @@ public interface PaymentService {
     PaymentResponse markSuccess(Long id);
 
     PaymentResponse markFailed(Long id);
+
+    PaymentResponse retryPayment(Long id);
 }

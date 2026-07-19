@@ -42,6 +42,9 @@ keycloak
     pkceMethod: "S256",
   })
   .then(() => {
+    if (import.meta.env.DEV) {
+      console.log("Temporary access token:", keycloak.token)
+    }
     createRoot(document.getElementById("root")).render(
       <QueryClientProvider client={queryClient}>
         <StrictMode>

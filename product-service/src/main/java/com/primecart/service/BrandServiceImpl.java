@@ -7,6 +7,7 @@ import com.primecart.repository.BrandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ public class BrandServiceImpl implements BrandService {
     private final BrandRepository brandRepository;
 
     @Override
+    @PreAuthorize("hasRole('BRAND_READ')")
     @Transactional(readOnly = true)
     @Cacheable(value = CacheNames.BRANDS,
                key = "'all'",

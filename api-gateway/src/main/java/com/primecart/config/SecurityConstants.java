@@ -1,4 +1,4 @@
-package com.primecart.config.security;
+package com.primecart.config;
 
 public final class SecurityConstants {
 

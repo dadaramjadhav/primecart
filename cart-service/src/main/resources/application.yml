@@ -1,16 +1,21 @@
 server:
   port: 8083
 
+primecart:
+  security:
+    jwt:
+      audience: primecart-api
+
 spring:
   application:
     name: cart-service
-
 
   boot:
     admin:
       client:
         url: http://localhost:9191
-
+        username: admin
+        password: 123
   cloud:
     openfeign:
       micrometer:
@@ -44,11 +49,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
-  #        include: health,info,metrics,prometheus,caches
+        include: health,info,metrics,prometheus,caches
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
+
   prometheus:
     metrics:
       export:

@@ -17,3 +17,8 @@ export async function paymentFailed(paymentId) {
 
   return response.data
 }
+export async function retryPayment(paymentId) {
+  const response = await api.put(`/api/payments/${paymentId}/retry`)
+
+  return response.data
+}

@@ -8,6 +8,7 @@ import com.primecart.entity.Inventory;
 import com.primecart.exception.InventoryNotFoundException;
 import com.primecart.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
 
+    @PreAuthorize("hasRole('INVENTORY_READ')")
     @Override
     @Transactional(readOnly = true)
     public InventoryResponse getInventory(Long productId) {
@@ -29,6 +31,7 @@ public class InventoryServiceImpl implements InventoryService {
         return mapToResponse(inventory);
     }
 
+    @PreAuthorize("hasRole('INVENTORY_INCREASE')")
     @Override
     public InventoryResponse increaseStock(Long productId, UpdateStockRequest request) {
 
@@ -41,6 +44,7 @@ public class InventoryServiceImpl implements InventoryService {
         return mapToResponse(inventory);
     }
 
+    @PreAuthorize("hasRole('INVENTORY_DECREASE')")
     @Override
     public InventoryResponse decreaseStock(Long productId, UpdateStockRequest request) {
 
@@ -58,6 +62,7 @@ public class InventoryServiceImpl implements InventoryService {
         return mapToResponse(inventory);
     }
 
+    @PreAuthorize("hasRole('INVENTORY_RESERVE')")
     @Override
     public void reserveStock(ReserveStockRequest request) {
 
@@ -75,6 +80,7 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.save(inventory);
     }
 
+    @PreAuthorize("hasRole('INVENTORY_RELEASE')")
     @Override
     public void releaseStock(ReserveStockRequest request) {
 
@@ -92,27 +98,7 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.save(inventory);
     }
 
-    private Inventory getInventoryEntity(Long productId) {
-
-        return inventoryRepository
-                .findByProductId(productId)
-                .orElseThrow(() -> new InventoryNotFoundException("Inventory not found for product " + productId));
-    }
-
-    private InventoryResponse mapToResponse(Inventory inventory) {
-
-        return InventoryResponse
-                .builder()
-
-                .productId(inventory.getProductId())
-
-                .availableQuantity(inventory.getAvailableQuantity())
-
-                .reservedQuantity(inventory.getReservedQuantity())
-
-                .build();
-    }
-
+    @PreAuthorize("hasRole('INVENTORY_CREATE')")
     @Override
     @Transactional
     public InventoryResponse createInventory(CreateInventoryRequest request) {
@@ -136,6 +122,7 @@ public class InventoryServiceImpl implements InventoryService {
         return mapToResponse(saved);
     }
 
+    @PreAuthorize("hasRole('INVENTORY_CONFIRM')")
     @Override
     @Transactional
     public void confirmStock(ReserveStockRequest request) {
@@ -153,5 +140,26 @@ public class InventoryServiceImpl implements InventoryService {
         inventory.setReservedQuantity(inventory.getReservedQuantity() - request.getQuantity());
 
         inventoryRepository.save(inventory);
+    }
+
+    private Inventory getInventoryEntity(Long productId) {
+
+        return inventoryRepository
+                .findByProductId(productId)
+                .orElseThrow(() -> new InventoryNotFoundException("Inventory not found for product " + productId));
+    }
+
+    private InventoryResponse mapToResponse(Inventory inventory) {
+
+        return InventoryResponse
+                .builder()
+
+                .productId(inventory.getProductId())
+
+                .availableQuantity(inventory.getAvailableQuantity())
+
+                .reservedQuantity(inventory.getReservedQuantity())
+
+                .build();
     }
 }

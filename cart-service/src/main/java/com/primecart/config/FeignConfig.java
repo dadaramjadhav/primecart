@@ -2,13 +2,11 @@ package com.primecart.config;
 
 import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
-@Configuration
 public class FeignConfig {
 
     @Bean
@@ -16,17 +14,17 @@ public class FeignConfig {
 
         return requestTemplate -> {
 
-            Authentication authentication =
-                    SecurityContextHolder.getContext().getAuthentication();
+            Authentication authentication = SecurityContextHolder
+                    .getContext()
+                    .getAuthentication();
 
             if (authentication instanceof JwtAuthenticationToken jwtToken) {
 
-                String token = jwtToken.getToken().getTokenValue();
+                String token = jwtToken
+                        .getToken()
+                        .getTokenValue();
 
-                requestTemplate.header(
-                        HttpHeaders.AUTHORIZATION,
-                        "Bearer " + token
-                );
+                requestTemplate.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
             }
         };
     }

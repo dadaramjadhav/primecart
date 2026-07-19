@@ -144,4 +144,12 @@ public class OrderController {
 
         return ResponseEntity.ok(orderService.paymentSuccess(orderId));
     }
+
+    @PutMapping("/{orderId}/retry-payment")
+    public ResponseEntity<OrderResponse> retryPayment(
+            @PathVariable
+            Long orderId) {
+
+        return ResponseEntity.ok(orderService.retryPayment(orderId));
+    }
 }

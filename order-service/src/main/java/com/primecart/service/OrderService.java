@@ -32,4 +32,6 @@ public interface OrderService {
     OrderResponse paymentFailed(Long orderId);
 
     OrderResponse paymentSuccess(Long orderId);
+
+    OrderResponse retryPayment(Long orderId);
 }

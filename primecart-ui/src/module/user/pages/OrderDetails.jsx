@@ -6,87 +6,95 @@ function OrderDetails() {
   const { order, isLoading, isError, error, isFetching } = useOrder(id)
 
   if (isLoading) {
-    return <div className="p-8 text-center">Loading...</div>
+    return <div className="p-8 text-center text-muted-foreground">Loading order...</div>
   }
 
   if (isError) {
     return (
-      <div className="py-20 text-center">
-        <h2 className="text-2xl font-semibold text-red-600">Unable to load order</h2>
+      <div className="rounded-xl border bg-card px-6 py-20 text-center text-card-foreground">
+        <h2 className="text-2xl font-semibold text-destructive">Unable to load order</h2>
 
-        <p className="mt-3 text-gray-500">{error?.message ?? "Something went wrong."}</p>
+        <p className="mt-3 text-muted-foreground">{error?.message ?? "Something went wrong."}</p>
       </div>
     )
   }
   if (!order) {
-    return <div className="p-8 text-center">Order not found.</div>
+    return <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">Order not found.</div>
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="bg-white shadow rounded-xl p-6">
+    <div className="mx-auto max-w-5xl p-6 text-foreground">
+      <div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Order Details</h1>
-          {isFetching && <span className="text-sm text-gray-500">Updating...</span>}
+          {isFetching && <span className="text-sm text-muted-foreground">Updating...</span>}
         </div>
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-gray-500">Order Number</p>
+            <p className="text-muted-foreground">Order Number</p>
             <p className="font-semibold">{order.orderNumber}</p>
           </div>
 
           <div>
-            <p className="text-gray-500">Status</p>
+            <p className="text-muted-foreground">Status</p>
 
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{order.status}</span>
+            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-primary">{order.status}</span>
           </div>
 
           <div>
-            <p className="text-gray-500">Order Date</p>
+            <p className="text-muted-foreground">Order Date</p>
             <p>{new Date(order.createdAt).toLocaleString()}</p>
           </div>
 
           <div>
-            <p className="text-gray-500">Total Amount</p>
+            <p className="text-muted-foreground">Total Amount</p>
             <p className="text-xl font-bold">₹ {order.totalAmount}</p>
           </div>
         </div>
 
-        <h2 className="text-2xl font-semibold mb-4">Items</h2>
+        <h2 className="mb-4 text-2xl font-semibold">Items</h2>
 
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left py-3">Product</th>
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-lg border-collapse">
+            <thead className="bg-muted/50">
+              <tr className="border-b">
+                <th className="px-4 py-3 text-left">Product</th>
 
-              <th>Price</th>
+                <th className="px-4 py-3">Price</th>
 
-              <th>Qty</th>
+                <th className="px-4 py-3">Qty</th>
 
-              <th>Subtotal</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {order.items.map((item) => (
-              <tr key={item.productId} className="border-b">
-                <td className="py-4">{item.productName}</td>
-
-                <td className="text-center">₹ {item.price}</td>
-
-                <td className="text-center">{item.quantity}</td>
-
-                <td className="text-center font-semibold">₹ {item.subtotal}</td>
+                <th className="px-4 py-3">Subtotal</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.productId} className="border-b last:border-b-0 hover:bg-muted/30">
+                  <td className="px-4 py-4">{item.productName}</td>
+
+                  <td className="px-4 text-center">₹ {item.price}</td>
+
+                  <td className="px-4 text-center">{item.quantity}</td>
+
+                  <td className="px-4 text-center font-semibold">₹ {item.subtotal}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {["PENDING", "INVENTORY_RESERVED"].includes(order.status) && (
-          <p className="mt-6 text-gray-600">Preparing your payment...</p>
+          <p className="mt-6 text-muted-foreground">Preparing your payment...</p>
         )}
-        {["CREATED", "PAYMENT_PENDING"].includes(order.status) && (
-          <Link to={`/payments/${order.id}`} className="inline-block mt-6 bg-green-600 text-white px-5 py-2 rounded">
-            Pay Now
+        {["CREATED", "PAYMENT_PENDING", "PAYMENT_FAILED"].includes(order.status) && (
+          <Link
+            to={`/payments/${order.id}`}
+            className={`mt-6 inline-block rounded-lg px-5 py-2 text-white ${
+              order.status === "PAYMENT_FAILED"
+                ? "bg-orange-600 hover:bg-orange-700"
+                : "bg-green-600 hover:bg-green-700"
+            }`}>
+            {order.status === "PAYMENT_FAILED" ? "Retry Payment" : "Pay Now"}
           </Link>
         )}
       </div>

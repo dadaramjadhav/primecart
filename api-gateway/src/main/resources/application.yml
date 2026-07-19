@@ -1,6 +1,11 @@
 server:
   port: 8181
 
+primecart:
+  security:
+    jwt:
+      audience: primecart-api
+
 spring:
   application:
     name: api-gateway
@@ -14,6 +19,8 @@ spring:
     admin:
       client:
         url: http://localhost:9191
+        username: admin
+        password: 123
 
   cloud:
     gateway:
@@ -83,12 +90,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
-  #        include: health,info,metrics,prometheus,caches
+        include: health,info,prometheus,metrics,caches
 
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
   prometheus:
     metrics:

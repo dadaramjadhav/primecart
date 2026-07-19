@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { clearCart } from "../services/cartService"
-import { getPayment, paymentFailed, paymentSuccess } from "../services/paymentService"
-
+import { getPayment, paymentFailed, paymentSuccess, retryPayment } from "../services/paymentService"
 function usePayment(orderId) {
   const queryClient = useQueryClient()
 
@@ -42,18 +41,23 @@ function usePayment(orderId) {
     onSuccess: refreshRelatedData,
   })
 
+  const retryMutation = useMutation({
+    mutationFn: retryPayment,
+    onSuccess: refreshRelatedData,
+  })
+
   return {
     payment: paymentQuery.data ?? null,
     isLoading: paymentQuery.isPending,
     isError: paymentQuery.isError,
     error: paymentQuery.error,
     isFetching: paymentQuery.isFetching,
-
+    isRetrying: retryMutation.isPending,
     completePayment: (paymentId) => successMutation.mutateAsync(paymentId),
 
     failPayment: (paymentId) => failureMutation.mutateAsync(paymentId),
-
-    isSubmitting: successMutation.isPending || failureMutation.isPending,
+    retryFailedPayment: (paymentId) => retryMutation.mutateAsync(paymentId),
+    isSubmitting: successMutation.isPending || failureMutation.isPending || retryMutation.isPending,
   }
 }
 

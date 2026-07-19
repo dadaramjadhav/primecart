@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMetrics productMetrics;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    @PreAuthorize("hasRole('PRODUCT_CREATE')")
     @CacheEvict(value = "allProducts",
                 allEntries = true)
     @Override
@@ -80,6 +82,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(savedProduct);
     }
 
+    @PreAuthorize("hasRole('PRODUCT_READ')")
     @Cacheable(value = "products",
                key = "#id")
     @Override
@@ -104,6 +107,7 @@ public class ProductServiceImpl implements ProductService {
         return List.of();
     }
 
+    @PreAuthorize("hasRole('PRODUCT_UPDATE')")
     @Caching(evict = {@CacheEvict(value = "products",
                                   key = "#id"), @CacheEvict(value = "allProducts",
                                                             allEntries = true)})
@@ -143,6 +147,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(updatedProduct);
     }
 
+    @PreAuthorize("hasRole('PRODUCT_DELETE')")
     @Caching(evict = {@CacheEvict(value = "products",
                                   key = "#id"), @CacheEvict(value = "allProducts",
                                                             allEntries = true)})
@@ -164,9 +169,8 @@ public class ProductServiceImpl implements ProductService {
         log.info("Product deleted successfully with id: {}", id);
     }
 
-    @Cacheable(value = "allProducts"
-//            key = "{#category,#brand,#active,#keyword,#page,#size,#sortBy,#direction}"
-)
+    @PreAuthorize("hasRole('PRODUCT_READ')")
+    @Cacheable(value = "allProducts")
     @Override
     public Page<ProductResponse> getProducts(Long category, Long brand, Boolean active, String keyword, int page, int size, String sortBy,
                                              String direction) {

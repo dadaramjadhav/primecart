@@ -34,20 +34,20 @@ function Cart() {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div className="py-20 text-center text-muted-foreground">Loading cart...</div>
   }
   if (isError) {
     return (
-      <div className="py-20 text-center">
-        <h2 className="text-2xl font-semibold text-red-600">Unable to load cart</h2>
+      <div className="rounded-xl border bg-card px-6 py-20 text-center text-card-foreground">
+        <h2 className="text-2xl font-semibold text-destructive">Unable to load cart</h2>
 
-        <p className="mt-3 text-gray-500">{error?.message ?? "Something went wrong."}</p>
+        <p className="mt-3 text-muted-foreground">{error?.message ?? "Something went wrong."}</p>
 
         <button
           type="button"
           onClick={() => retryCart()}
           disabled={isFetching}
-          className="mt-6 rounded bg-blue-600 px-5 py-2 text-white disabled:opacity-50">
+          className="mt-6 rounded-lg bg-primary px-5 py-2 text-primary-foreground hover:bg-primary/80 disabled:opacity-50">
           {isFetching ? "Retrying..." : "Try Again"}
         </button>
       </div>
@@ -58,47 +58,59 @@ function Cart() {
   }
   if (cart.items.length === 0) {
     return (
-      <div className="p-8 text-center">
+      <div className="rounded-xl border bg-card p-8 text-center text-card-foreground">
         <h2 className="text-2xl">Your cart is empty</h2>
+        <p className="mt-2 text-muted-foreground">Add a product to begin your order.</p>
       </div>
     )
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
+    <div className="mx-auto max-w-6xl p-6 text-foreground">
+      <h1 className="mb-6 text-3xl font-bold">Shopping Cart</h1>
 
       <div className="space-y-4">
         {cart.items.map((item) => (
-          <div key={item.id} className="flex justify-between items-center border rounded p-4">
+          <div
+            key={item.id}
+            className="flex flex-col gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-semibold">{item.productName}</h2>
 
-              <p>₹ {item.price}</p>
+              <p className="text-sm text-muted-foreground">₹ {item.price} each</p>
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={() => decrease(item)} className="border px-3">
+              <button
+                type="button"
+                onClick={() => decrease(item)}
+                className="h-9 w-9 rounded-lg border bg-background hover:bg-muted">
                 -
               </button>
 
-              <span>{item.quantity}</span>
+              <span className="min-w-6 text-center font-medium">{item.quantity}</span>
 
-              <button onClick={() => increase(item)} className="border px-3">
+              <button
+                type="button"
+                onClick={() => increase(item)}
+                className="h-9 w-9 rounded-lg border bg-background hover:bg-muted">
                 +
               </button>
             </div>
 
-            <div>₹ {item.price * item.quantity}</div>
+            <div className="font-semibold">₹ {item.price * item.quantity}</div>
 
-            <button onClick={() => remove(item.id)} className="bg-red-500   text-white px-3 py-1 rounded">
+            <button
+              type="button"
+              onClick={() => remove(item.id)}
+              className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/20">
               Remove
             </button>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 text-right">
+      <div className="mt-8 rounded-xl border bg-card p-6 text-right text-card-foreground">
         <h2 className="text-xl font-bold">Total: ₹ {cart.totalAmount}</h2>
 
         <button

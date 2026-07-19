@@ -12,6 +12,7 @@ import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.repository.CartItemRepository;
 import com.primecart.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,20 +29,23 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductClient productClient;
 
+    @PreAuthorize("hasRole('CART_READ')")
     @Override
     @Transactional(readOnly = true)
     public CartResponse getCart(String userId) {
 
-        Cart cart = cartRepository.findByUserId(userId)
-                                  .orElse(null);
+        Cart cart = cartRepository
+                .findByUserId(userId)
+                .orElse(null);
 
         if (cart == null) {
-            return CartResponse.builder()
-                               .cartId(null)
-                               .userId(userId)
-                               .items(List.of())
-                               .totalAmount(BigDecimal.ZERO)
-                               .build();
+            return CartResponse
+                    .builder()
+                    .cartId(null)
+                    .userId(userId)
+                    .items(List.of())
+                    .totalAmount(BigDecimal.ZERO)
+                    .build();
         }
 
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
@@ -49,13 +53,14 @@ public class CartServiceImpl implements CartService {
         return buildCartResponse(cart, cartItems);
     }
 
+    @PreAuthorize("hasRole('CART_ITEM_ADD')")
     @Override
-    public CartResponse addItem(String userId,
-                                AddCartItemRequest request) {
+    public CartResponse addItem(String userId, AddCartItemRequest request) {
 
         // Get existing cart or create a new one
-        Cart cart = cartRepository.findByUserId(userId)
-                                  .orElseGet(() -> createCart(userId));
+        Cart cart = cartRepository
+                .findByUserId(userId)
+                .orElseGet(() -> createCart(userId));
 
         // Validate product via Product Service
         ProductResponse product = getProduct(request.getProductId());
@@ -71,24 +76,23 @@ public class CartServiceImpl implements CartService {
             int newQuantity = cartItem.getQuantity() + request.getQuantity();
 
             cartItem.setQuantity(newQuantity);
-            cartItem.setSubtotal(
-                    cartItem.getPrice()
-                            .multiply(BigDecimal.valueOf(newQuantity))
-            );
+            cartItem.setSubtotal(cartItem
+                                         .getPrice()
+                                         .multiply(BigDecimal.valueOf(newQuantity)));
         } else {
 
             // Create a new cart item
-            cartItem = CartItem.builder()
-                               .cart(cart)
-                               .productId(product.getId())
-                               .productName(product.getName())
-                               .price(product.getPrice())
-                               .quantity(request.getQuantity())
-                               .subtotal(
-                                       product.getPrice()
-                                              .multiply(BigDecimal.valueOf(request.getQuantity()))
-                               )
-                               .build();
+            cartItem = CartItem
+                    .builder()
+                    .cart(cart)
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .price(product.getPrice())
+                    .quantity(request.getQuantity())
+                    .subtotal(product
+                                      .getPrice()
+                                      .multiply(BigDecimal.valueOf(request.getQuantity())))
+                    .build();
         }
 
         cartItemRepository.save(cartItem);
@@ -98,10 +102,9 @@ public class CartServiceImpl implements CartService {
         return buildCartResponse(cart, items);
     }
 
+    @PreAuthorize("hasRole('CART_ITEM_UPDATE')")
     @Override
-    public CartResponse updateItem(String userId,
-                                   Long cartItemId,
-                                   UpdateCartItemRequest request) {
+    public CartResponse updateItem(String userId, Long cartItemId, UpdateCartItemRequest request) {
 
         Cart cart = getCartByUser(userId);
 
@@ -111,10 +114,9 @@ public class CartServiceImpl implements CartService {
 
         cartItem.setQuantity(request.getQuantity());
 
-        cartItem.setSubtotal(
-                cartItem.getPrice()
-                        .multiply(BigDecimal.valueOf(request.getQuantity()))
-        );
+        cartItem.setSubtotal(cartItem
+                                     .getPrice()
+                                     .multiply(BigDecimal.valueOf(request.getQuantity())));
 
         cartItemRepository.save(cartItem);
 
@@ -123,9 +125,9 @@ public class CartServiceImpl implements CartService {
         return buildCartResponse(cart, items);
     }
 
+    @PreAuthorize("hasRole('CART_ITEM_REMOVE')")
     @Override
-    public void removeItem(String userId,
-                           Long cartItemId) {
+    public void removeItem(String userId, Long cartItemId) {
 
         Cart cart = getCartByUser(userId);
 
@@ -136,6 +138,7 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.delete(cartItem);
     }
 
+    @PreAuthorize("hasRole('CART_CLEAR')")
     @Override
     public void clearCart(String userId) {
 
@@ -150,15 +153,15 @@ public class CartServiceImpl implements CartService {
 
     private Cart createCart(String userId) {
 
-        Cart cart = Cart.builder()
-                        .userId(userId)
-                        .build();
+        Cart cart = Cart
+                .builder()
+                .userId(userId)
+                .build();
 
         return cartRepository.save(cart);
     }
 
-    private CartResponse buildCartResponse(Cart cart,
-                                           List<CartItem> cartItems) {
+    private CartResponse buildCartResponse(Cart cart, List<CartItem> cartItems) {
 
         List<CartItemResponse> items = new ArrayList<>();
 
@@ -171,54 +174,57 @@ public class CartServiceImpl implements CartService {
             total = total.add(item.getSubtotal());
         }
 
-        return CartResponse.builder()
-                           .cartId(cart.getId())
-                           .userId(cart.getUserId())
-                           .items(items)
-                           .totalAmount(total)
-                           .build();
+        return CartResponse
+                .builder()
+                .cartId(cart.getId())
+                .userId(cart.getUserId())
+                .items(items)
+                .totalAmount(total)
+                .build();
     }
 
     private CartItemResponse toResponse(CartItem item) {
 
-        return CartItemResponse.builder()
-                               .id(item.getId())
-                               .productId(item.getProductId())
-                               .productName(item.getProductName())
-                               .price(item.getPrice())
-                               .quantity(item.getQuantity())
-                               .subtotal(item.getSubtotal())
-                               .build();
+        return CartItemResponse
+                .builder()
+                .id(item.getId())
+                .productId(item.getProductId())
+                .productName(item.getProductName())
+                .price(item.getPrice())
+                .quantity(item.getQuantity())
+                .subtotal(item.getSubtotal())
+                .build();
     }
 
     private Cart getCartByUser(String userId) {
 
-        return cartRepository.findByUserId(userId)
-                             .orElseThrow(() ->
-                                     new ResourceNotFoundException("Cart not found."));
+        return cartRepository
+                .findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found."));
     }
 
     private CartItem getCartItem(Long cartItemId) {
 
-        return cartItemRepository.findById(cartItemId)
-                                 .orElseThrow(() ->
-                                         new ResourceNotFoundException("Cart item not found."));
+        return cartItemRepository
+                .findById(cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found."));
     }
 
-    private void validateOwnership(Cart cart,
-                                   CartItem cartItem) {
+    private void validateOwnership(Cart cart, CartItem cartItem) {
 
-        if (!cart.getId().equals(cartItem.getCart().getId())) {
+        if (!cart
+                .getId()
+                .equals(cartItem
+                                .getCart()
+                                .getId())) {
 
-            throw new ResourceNotFoundException(
-                    "Cart item does not belong to authenticated user.");
+            throw new ResourceNotFoundException("Cart item does not belong to authenticated user.");
         }
     }
 
     private ProductResponse getProduct(Long productId) {
 
-        ProductResponse product =
-                productClient.getProductById(productId);
+        ProductResponse product = productClient.getProductById(productId);
 
         if (product == null || Boolean.FALSE.equals(product.getActive())) {
 

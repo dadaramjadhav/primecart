@@ -1,9 +1,15 @@
 server:
   port: 8081
 
+primecart:
+  security:
+    jwt:
+      audience: primecart-api
+
 spring:
   application:
     name: product-service
+
 
   rabbitmq:
     host: localhost
@@ -20,6 +26,8 @@ spring:
     admin:
       client:
         url: http://localhost:9191
+        username: admin
+        password: 123
 
   cache:
     type: redis
@@ -57,26 +65,21 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
-  #        include: health,info,metrics,prometheus,caches
+        include: health,info,metrics,prometheus,caches
 
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
   tracing:
     enabled: true
     sampling:
       probability: 1.0
-  prometheus:
-    metrics:
-      export:
-        enabled: true
 
   otlp:
     tracing:

@@ -1,0 +1,35 @@
+services:
+  vault-init:
+    image: hashicorp/vault:latest
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 100:1000 /vault/data"]
+    volumes:
+      - vault-data:/vault/data
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: primecart-vault
+
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+
+    cap_add:
+      - IPC_LOCK
+
+    ports:
+      - "8200:8200"
+
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+
+    command: server
+
+    volumes:
+      - vault-data:/vault/data
+      - ./vault-config.hcl:/vault/config/vault.hcl:ro
+
+    restart: unless-stopped
+
+volumes:
+  vault-data:

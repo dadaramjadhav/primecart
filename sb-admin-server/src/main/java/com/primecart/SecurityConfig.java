@@ -24,43 +24,36 @@ public class SecurityConfig {
 
         String adminContextPath = adminServerProperties.getContextPath();
 
-        SavedRequestAwareAuthenticationSuccessHandler successHandler =
-                new SavedRequestAwareAuthenticationSuccessHandler();
+        SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
 
         successHandler.setTargetUrlParameter("redirectTo");
         successHandler.setDefaultTargetUrl(adminContextPath + "/");
 
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                adminContextPath + "/assets/**",
-                                adminContextPath + "/login",
-                                adminContextPath + "/instances"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .requestMatchers(adminContextPath + "/assets/**", adminContextPath + "/login")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
                 .formLogin(form -> form
                         .loginPage(adminContextPath + "/login")
-                        .successHandler(successHandler)
-                )
+                        .successHandler(successHandler))
                 .logout(logout -> logout
                         .logoutUrl(adminContextPath + "/logout")
-                )
+                        .logoutSuccessUrl(adminContextPath + "/login?logout")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID", "remember-me")
+                        .permitAll())
                 .httpBasic(Customizer.withDefaults())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(
-                                org.springframework.security.web.csrf.CookieCsrfTokenRepository
-                                        .withHttpOnlyFalse()
-                        )
-                        .ignoringRequestMatchers(
-                                adminContextPath + "/instances",
-                                adminContextPath + "/instances/*"
-                        )
-                )
+                        .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers(adminContextPath + "/instances", adminContextPath + "/instances/*"))
                 .rememberMe(rememberMe -> rememberMe
-                        .key(UUID.randomUUID().toString())
-                        .tokenValiditySeconds(1209600)
-                );
+                        .key(UUID
+                                     .randomUUID()
+                                     .toString())
+                        .tokenValiditySeconds(1209600));
 
         return http.build();
     }
