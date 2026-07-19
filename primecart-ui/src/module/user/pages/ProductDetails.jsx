@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom"
 import useCart from "../hooks/useCart"
-import useAuth from "../hooks/useAuth"
+import useAuth from "../../../shared/hooks/useAuth"
 import useProduct from "../hooks/useProduct"
 import { showSuccess } from "../../../shared/utils/notifications"
 

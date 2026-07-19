@@ -1,9 +1,8 @@
-
 import { Navigate } from "react-router-dom"
-import useAuth from "../hooks/useAuth"
+import useAuth from "../../../shared/hooks/useAuth"
 
 function ProtectedRoute({ children }) {
-  const {authenticated}= useAuth()
+  const { authenticated } = useAuth()
   if (!authenticated) {
     return <Navigate to="/login" />
   }

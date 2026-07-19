@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import useAuth from "../hooks/useAuth"
-import useTheme from "../hooks/useTheme"
+
+import useTheme from "../../../shared/hooks/useTheme"
+import useAuth from "../../../shared/hooks/useAuth"
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

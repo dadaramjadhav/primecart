@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+#react project
+node_modules
+dist
+.git
+.env
+.env.*
+npm-debug.log*

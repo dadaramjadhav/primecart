@@ -1,5 +1,6 @@
 import usePayment from "../hooks/usePayment"
 import { useNavigate, useParams } from "react-router-dom"
+import { logSafeError } from "@/shared/utils/safeLogger"
 
 function Payment() {
   const { orderId } = useParams()
@@ -14,7 +15,7 @@ function Payment() {
 
       navigate(`/orders/${orderId}`)
     } catch (error) {
-      console.error(error)
+      logSafeError("Payment creation failed", error)
     }
   }
 
@@ -24,7 +25,7 @@ function Payment() {
 
       navigate(`/orders/${orderId}`)
     } catch (error) {
-      console.error(error)
+      logSafeError("Payment failure update failed", error)
     }
   }
 

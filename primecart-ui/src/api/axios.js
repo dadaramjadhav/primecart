@@ -1,5 +1,9 @@
 import axios from "axios"
+
 import keycloak from "../auth/keycloak"
+import { refreshAccessToken } from "../auth/tokenManager"
+import { SessionExpiredError } from "../auth/errors"
+import { logoutExpiredSession } from "../auth/sessionManager"
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -7,42 +11,54 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 })
-
-//adding token to every request
-api.interceptors.request.use((config) => {
-  if (keycloak.token) {
-    config.headers.Authorization = `Bearer ${keycloak.token}`
+api.interceptors.request.use(async (config) => {
+  if (!keycloak.authenticated) {
+    return config
   }
+  const token = await refreshAccessToken()
+
+  config.headers.Authorization = `Bearer ${token}`
 
   return config
 })
 
 // error handling
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
+
   async (error) => {
     const originalRequest = error.config
     const status = error.response?.status
 
-    if (status === 401 && originalRequest && !originalRequest._retry && keycloak.authenticated) {
-      originalRequest._retry = true
+    const shouldRetry = status === 401 && originalRequest && !originalRequest._retry && keycloak.authenticated
 
-      try {
-        await keycloak.updateToken(-1)
-
-        originalRequest.headers.Authorization = `Bearer ${keycloak.token}`
-
-        return api(originalRequest)
-      } catch {
-        await keycloak.logout({
-          redirectUri: window.location.origin,
-        })
-      }
+    if (!shouldRetry) {
+      return Promise.reject(error)
     }
 
-    return Promise.reject(error)
+    originalRequest._retry = true
+
+    try {
+      const token = await refreshAccessToken({
+        force: true,
+      })
+
+      originalRequest.headers.Authorization = `Bearer ${token}`
+
+      return api(originalRequest)
+    } catch (refreshError) {
+      const sessionError = new SessionExpiredError({
+        cause: refreshError,
+      })
+
+      try {
+        await logoutExpiredSession()
+      } catch {
+        window.location.replace("/login?reason=session-expired")
+      }
+
+      return Promise.reject(sessionError)
+    }
   },
 )
 export default api

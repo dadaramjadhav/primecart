@@ -44,42 +44,35 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMetrics productMetrics;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @CacheEvict(value = "allProducts", allEntries = true)
+    @CacheEvict(value = "allProducts",
+                allEntries = true)
     @Override
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
 
         log.info("Creating product: {}", request.name());
 
-        Category category = categoryRepository.findById(request.categoryId())
-                                              .orElseThrow(() -> {
-                                                  log.warn("Category not found with id: {}", request.categoryId());
-                                                  return new ResourceNotFoundException(
-                                                          "Category not found with id: " + request.categoryId());
-                                              });
+        Category category = categoryRepository
+                .findById(request.categoryId())
+                .orElseThrow(() -> {
+                    log.warn("Category not found with id: {}", request.categoryId());
+                    return new ResourceNotFoundException("Category not found with id: " + request.categoryId());
+                });
 
-        Brand brand = brandRepository.findById(request.brandId())
-                                     .orElseThrow(() -> {
-                                         log.warn("Brand not found with id: {}", request.brandId());
-                                         return new ResourceNotFoundException(
-                                                 "Brand not found with id: " + request.brandId());
-                                     });
+        Brand brand = brandRepository
+                .findById(request.brandId())
+                .orElseThrow(() -> {
+                    log.warn("Brand not found with id: {}", request.brandId());
+                    return new ResourceNotFoundException("Brand not found with id: " + request.brandId());
+                });
 
         Product product = productMapper.toEntity(request, category, brand);
 
         Product savedProduct = productRepository.save(product);
 
-        ProductCreatedEvent event =
-                new ProductCreatedEvent(
-                        UUID.randomUUID(),
-                        "PRODUCT_CREATED",
-                        savedProduct.getId(),
-                        savedProduct.getSku(),
-                        savedProduct.getName(),
-                        savedProduct.getPrice(),
-                        savedProduct.getStock(),
-                        Instant.now()
-                );
+        ProductCreatedEvent event = new ProductCreatedEvent(UUID.randomUUID(), "PRODUCT_CREATED", savedProduct.getId(),
+                                                            savedProduct.getSku(), savedProduct.getName(), savedProduct.getPrice(),
+                                                            savedProduct.getStock(), Instant.now());
         applicationEventPublisher.publishEvent(event);
 
         log.info("Product created with id: {}", savedProduct.getId());
@@ -87,18 +80,20 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(savedProduct);
     }
 
-    @Cacheable(value = "products", key = "#id")
+    @Cacheable(value = "products",
+               key = "#id")
     @Override
     public ProductResponse getProductById(Long id) {
 
         log.info("Fetching product with id: {}", id);
 
-        Product product = productRepository.findById(id)
-                                           .orElseThrow(() -> {
-                                               log.warn("Product not found with id: {}", id);
-                                               productMetrics.incrementProductNotFound();
-                                               return new ResourceNotFoundException("Product not found with id: " + id);
-                                           });
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product not found with id: {}", id);
+                    productMetrics.incrementProductNotFound();
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
 
         log.info("Product fetched successfully with id: {}", id);
         return productMapper.toResponse(product);
@@ -109,35 +104,35 @@ public class ProductServiceImpl implements ProductService {
         return List.of();
     }
 
-    @Caching(evict = {
-            @CacheEvict(value = "products", key = "#id"),
-            @CacheEvict(value = "allProducts", allEntries = true)
-    })
+    @Caching(evict = {@CacheEvict(value = "products",
+                                  key = "#id"), @CacheEvict(value = "allProducts",
+                                                            allEntries = true)})
     @Override
     public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
 
         log.info("Updating product with id: {}", id);
 
-        Product product = productRepository.findById(id)
-                                           .orElseThrow(() -> {
-                                               log.warn("Product not found with id: {}", id);
-                                               productMetrics.incrementProductNotFound();
-                                               return new ResourceNotFoundException("Product not found with id: " + id);
-                                           });
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product not found with id: {}", id);
+                    productMetrics.incrementProductNotFound();
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
 
-        Category category = categoryRepository.findById(request.categoryId())
-                                              .orElseThrow(() -> {
-                                                  log.warn("Category not found with id: {}", request.categoryId());
-                                                  return new ResourceNotFoundException(
-                                                          "Category not found with id: " + request.categoryId());
-                                              });
+        Category category = categoryRepository
+                .findById(request.categoryId())
+                .orElseThrow(() -> {
+                    log.warn("Category not found with id: {}", request.categoryId());
+                    return new ResourceNotFoundException("Category not found with id: " + request.categoryId());
+                });
 
-        Brand brand = brandRepository.findById(request.brandId())
-                                     .orElseThrow(() -> {
-                                         log.warn("Brand not found with id: {}", request.brandId());
-                                         return new ResourceNotFoundException(
-                                                 "Brand not found with id: " + request.brandId());
-                                     });
+        Brand brand = brandRepository
+                .findById(request.brandId())
+                .orElseThrow(() -> {
+                    log.warn("Brand not found with id: {}", request.brandId());
+                    return new ResourceNotFoundException("Brand not found with id: " + request.brandId());
+                });
 
         productMapper.updateEntity(product, request, category, brand);
 
@@ -148,48 +143,41 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(updatedProduct);
     }
 
-    @Caching(evict = {
-            @CacheEvict(value = "products", key = "#id"),
-            @CacheEvict(value = "allProducts", allEntries = true)
-    })
+    @Caching(evict = {@CacheEvict(value = "products",
+                                  key = "#id"), @CacheEvict(value = "allProducts",
+                                                            allEntries = true)})
     @Override
     public void deleteProduct(Long id) {
 
         log.info("Deleting product with id: {}", id);
 
-        Product product = productRepository.findById(id)
-                                           .orElseThrow(() -> {
-                                               log.warn("Product not found with id: {}", id);
-                                               productMetrics.incrementProductNotFound();
-                                               return new ResourceNotFoundException("Product not found with id: " + id);
-                                           });
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product not found with id: {}", id);
+                    productMetrics.incrementProductNotFound();
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
 
         productRepository.delete(product);
 
         log.info("Product deleted successfully with id: {}", id);
     }
 
-    @Cacheable(
-            value = "allProducts"
+    @Cacheable(value = "allProducts"
 //            key = "{#category,#brand,#active,#keyword,#page,#size,#sortBy,#direction}"
-    )
+)
     @Override
-    public Page<ProductResponse> getProducts(
-            Long category,
-            Long brand,
-            Boolean active,
-            String keyword,
-            int page,
-            int size,
-            String sortBy,
-            String direction) {
+    public Page<ProductResponse> getProducts(Long category, Long brand, Boolean active, String keyword, int page, int size, String sortBy,
+                                             String direction) {
 
-        log.info("Fetching products with filters - category={}, brand={}, active={}, keyword={}",
-                category, brand, active, keyword);
+        log.info("Fetching products with filters - category={}, brand={}, active={}, keyword={}", category, brand, active, keyword);
 
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort
+                                                         .by(sortBy)
+                                                         .descending() : Sort
+                                                                         .by(sortBy)
+                                                                         .ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 

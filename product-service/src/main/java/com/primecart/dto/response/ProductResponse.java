@@ -9,6 +9,10 @@ public record ProductResponse(
 
         Long id,
 
+        String sku,
+
+        Integer stock,
+
         String name,
 
         String description,
@@ -29,8 +33,7 @@ public record ProductResponse(
 
         LocalDateTime createdAt,
 
-        LocalDateTime updatedAt
-) implements Serializable {
+        LocalDateTime updatedAt) implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

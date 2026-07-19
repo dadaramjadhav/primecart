@@ -5,7 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { ToastContainer } from "react-toastify"
 import { shouldRetryQuery } from "./api/queryRetry"
 import ErrorBoundary from "./module/user/components/ErrorBoundary"
-
+import { logSafeError } from "./shared/utils/safeLogger"
 import App from "./App"
 import "./index.css"
 import keycloak from "./auth/keycloak"
@@ -13,21 +13,14 @@ import AuthProvider from "./context/AuthProvider"
 import ThemeProvider from "./context/ThemeProvider"
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error, query) => {
-      console.error("Query failed", {
-        queryKey: query.queryKey,
-        error,
-      })
+    onError: (error) => {
+      logSafeError("React Query request failed", error)
     },
   }),
 
   mutationCache: new MutationCache({
-    onError: (error, variables, context, mutation) => {
-      console.error("Mutation failed", {
-        mutationKey: mutation.options.mutationKey,
-        variables,
-        error,
-      })
+    onError: (error) => {
+      logSafeError("React Query mutation failed", error)
     },
   }),
 
@@ -65,4 +58,6 @@ keycloak
       </QueryClientProvider>,
     )
   })
-  .catch(console.error)
+  .catch((error) => {
+    logSafeError("Keycloak initialization failed", error)
+  })

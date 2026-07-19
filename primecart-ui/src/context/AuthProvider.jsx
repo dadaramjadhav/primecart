@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import keycloak from "../auth/keycloak"
 import AuthContext from "./AuthContext"
+import { refreshAccessToken } from "../auth/tokenManager"
+import { logoutExpiredSession } from "@/auth/sessionManager"
 
 function AuthProvider({ children }) {
   const [authState, setAuthState] = useState(() => ({
     authenticated: Boolean(keycloak.authenticated),
-    user: keycloak.idTokenParsed ?? null,
-    token: keycloak.token ?? null,
+    user: keycloak.tokenParsed ?? keycloak.idTokenParsed ?? null,
   }))
 
   const syncAuthState = useCallback(() => {
     setAuthState({
       authenticated: Boolean(keycloak.authenticated),
-      user: keycloak.idTokenParsed ?? null,
-      token: keycloak.token ?? null,
+      user: keycloak.tokenParsed ?? keycloak.idTokenParsed ?? null,
     })
   }, [])
 
@@ -24,15 +24,19 @@ function AuthProvider({ children }) {
 
     keycloak.onTokenExpired = async () => {
       try {
-        await keycloak.updateToken(30)
+        await refreshAccessToken({
+          force: true,
+        })
+
         syncAuthState()
       } catch {
-        await keycloak.logout({
-          redirectUri: window.location.origin,
-        })
+        try {
+          await logoutExpiredSession()
+        } catch {
+          window.location.replace("/login?reason=session-expired")
+        }
       }
     }
-
     return () => {
       keycloak.onAuthSuccess = undefined
       keycloak.onAuthRefreshSuccess = undefined
@@ -41,23 +45,27 @@ function AuthProvider({ children }) {
     }
   }, [syncAuthState])
 
-  const login = useCallback(() => {
+  const login = useCallback((redirectPath = "/") => {
     return keycloak.login({
-      redirectUri: window.location.origin,
+      redirectUri: `${window.location.origin}${redirectPath}`,
     })
   }, [])
 
-  const logout = useCallback(() => {
-    return keycloak.logout({
-      redirectUri: window.location.origin,
-    })
+  const logout = useCallback(async () => {
+    try {
+      await keycloak.logout({
+        redirectUri: window.location.origin,
+      })
+    } catch {
+      keycloak.clearToken()
+      window.location.replace("/")
+    }
   }, [])
 
   const value = useMemo(
     () => ({
       authenticated: authState.authenticated,
       user: authState.user,
-      token: authState.token,
       login,
       logout,
     }),

@@ -2,6 +2,7 @@ import useCreateOrder from "../hooks/useCreateOrder"
 import { useNavigate } from "react-router-dom"
 import { showError } from "../../../shared/utils/notifications"
 import useCart from "../hooks/useCart"
+import { logSafeError } from "@/shared/utils/safeLogger"
 
 function Cart() {
   const navigate = useNavigate()
@@ -13,7 +14,7 @@ function Cart() {
 
       navigate(`/orders/${order.id}`)
     } catch (error) {
-      console.error(error)
+      logSafeError("Cart update failed", error)
       showError(error, "Unable to update your cart.")
     }
   }

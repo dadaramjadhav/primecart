@@ -1,7 +1,8 @@
 import { Component } from "react"
+import { logSafeError } from "@/shared/utils/safeLogger"
 
 // error boundary for exception handling
- class ErrorBoundary extends Component {
+class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
 
@@ -18,11 +19,8 @@ import { Component } from "react"
     }
   }
 
-  componentDidCatch(error, errorInfo) {
-    console.error("Unexpected React error", {
-      error,
-      componentStack: errorInfo.componentStack,
-    })
+  componentDidCatch(error) {
+    logSafeError("Unexpected React rendering error", error)
   }
 
   handleReload = () => {

@@ -19,17 +19,12 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/actuator/**",
-                                "/api/test/retry"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/actuator/health",
-                                "/actuator/info",
-                                "/actuator/prometheus")
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**", "/api/test/retry")
                         .permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/brands/**")
+                        .hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/products/**")
                         .hasAnyRole("USER", "ADMIN")
 
@@ -42,15 +37,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**")
                         .hasRole("ADMIN")
 
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest()
+                        .authenticated())
 /*This configuration enables JWT-based authentication for the Resource Server and tells Spring Security
-to use the custom JwtAuthenticationConverter to convert incoming JWTs into authenticated users with the correct roles and authorities.*/
-                .oauth2ResourceServer(oauth ->
-                        oauth.jwt(jwt ->
-                                jwt.jwtAuthenticationConverter(new JwtAuthenticationConverter())
-                        )
-                );
+to use the custom JwtAuthenticationConverter to convert incoming JWTs into authenticated users with the correct roles and authorities.*/.oauth2ResourceServer(
+                        oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(new JwtAuthenticationConverter())));
 
         return http.build();
     }

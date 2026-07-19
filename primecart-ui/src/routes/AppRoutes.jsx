@@ -1,10 +1,18 @@
-import { BrowserRouter } from "react-router-dom"
-import UserRoutes from "../module/user/routes/UserRoutes"
-
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+const UserRoutes = lazy(() => import("../module/user/routes/UserRoutes"))
+const AdminRoutes = lazy(() => import("../module/admin/routes/AdminRoutes"))
+import Login from "../auth/pages/Login"
+import { lazy, Suspense } from "react"
 function AppRoutes() {
   return (
     <BrowserRouter>
-      <UserRoutes />
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin/*" element={<AdminRoutes />} />
+          <Route path="/*" element={<UserRoutes />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

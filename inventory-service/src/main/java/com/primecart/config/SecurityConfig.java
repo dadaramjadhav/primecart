@@ -33,6 +33,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**")
                         .hasAnyRole("USER", "ADMIN")
 
+                        // Order-service calls made on behalf of an authenticated
+                        // customer must be matched before the admin-only wildcard.
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/inventory/reserve",
+                                "/api/inventory/release",
+                                "/api/inventory/confirm")
+                        .authenticated()
+
                         .requestMatchers(HttpMethod.POST, "/api/inventory/**")
                         .hasRole("ADMIN")
 
@@ -41,8 +49,6 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.DELETE, "/api/inventory/**")
                         .hasRole("ADMIN")
-                        .requestMatchers("/api/inventory/reserve", "/api/inventory/release", "/api/inventory/confirm")
-                        .authenticated()
                         .anyRequest()
                         .authenticated())
 

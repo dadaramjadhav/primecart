@@ -20,72 +20,87 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
 
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
                         // Public endpoints
-                        .pathMatchers(
-                                "/auth/token",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/actuator/**"
-                        ).permitAll()
-                        .pathMatchers("/dev/token").permitAll()
+                        .pathMatchers("/auth/token", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/actuator/**")
+                        .permitAll()
+                        .pathMatchers("/dev/token")
+                        .permitAll()
 
                         // Product Service
-                        .pathMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/products/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/products/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/products/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/products/**")
+                        .hasAnyRole("USER", "ADMIN")
 
+                        .pathMatchers(HttpMethod.GET, "/api/categories/**", "/api/brands/**")
+                        .hasAnyRole("USER", "ADMIN")
                         // Order Service
-                        .pathMatchers(HttpMethod.POST, "/api/orders/**").hasRole("USER")
+                        .pathMatchers(HttpMethod.POST, "/api/orders/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/orders/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/orders/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/orders/**")
+                        .hasAnyRole("USER", "ADMIN")
 
                         // Cart Service
-                        .pathMatchers(HttpMethod.GET, "/api/cart/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/cart/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/cart/**").hasRole("USER")
+                        .pathMatchers(HttpMethod.POST, "/api/cart/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/cart/**").hasRole("USER")
+                        .pathMatchers(HttpMethod.PUT, "/api/cart/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/cart/**").hasRole("USER")
+                        .pathMatchers(HttpMethod.DELETE, "/api/cart/**")
+                        .hasAnyRole("USER", "ADMIN")
 
                         // Inventory Service APIs
-                        .pathMatchers(HttpMethod.GET, "/api/inventory/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/inventory/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/inventory").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/inventory")
+                        .hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/inventory/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/inventory/**")
+                        .hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/inventory/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/inventory/**")
+                        .hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/inventory/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/inventory/**")
+                        .hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.GET, "/api/payments/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/payments/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/payments/**").hasRole("USER")
+                        .pathMatchers(HttpMethod.POST, "/api/payments/**")
+                        .hasAnyRole("USER", "ADMIN")
 
-                        .pathMatchers(HttpMethod.PUT, "/api/payments/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/payments/**")
+                        .hasAnyRole("ADMIN", "USER")
 
-                        .pathMatchers(HttpMethod.DELETE, "/api/payments/**").hasRole("ADMIN")
-                        .anyExchange().authenticated()
-                )
+                        .pathMatchers(HttpMethod.DELETE, "/api/payments/**")
+                        .hasRole("ADMIN")
+                        .anyExchange()
+                        .authenticated())
 
-                .oauth2ResourceServer(oauth -> oauth
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(
-                                new ReactiveJwtAuthenticationConverterAdapter(
-                                        new JwtAuthenticationConverter()
-                                )
-                        ))
-                )
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(
+                        new ReactiveJwtAuthenticationConverterAdapter(new JwtAuthenticationConverter()))))
 
                 .build();
     }

@@ -48,6 +48,8 @@ public class ProductMapper {
 
         return new ProductResponse(
                 product.getId(),
+                product.getSku(),
+                product.getStock(),
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),

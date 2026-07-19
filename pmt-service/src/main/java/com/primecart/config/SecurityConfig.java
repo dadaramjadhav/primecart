@@ -15,47 +15,34 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        JwtAuthenticationConverter jwtAuthenticationConverter =
-                new JwtAuthenticationConverter();
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
 
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
-                new KeycloakJwtAuthenticationConverter()
-        );
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeycloakJwtAuthenticationConverter());
 
         return http
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/actuator/**"
-                        ).permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**")
+                        .permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/payments/**")
                         .hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/payments/**")
-                        .hasRole("USER")
+                        .hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers(HttpMethod.PUT, "/api/payments/**")
-                        .hasRole("ADMIN")
+                        .hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers(HttpMethod.DELETE, "/api/payments/**")
-                        .hasRole("ADMIN")
+                        .hasAnyRole("USER", "ADMIN")
 
                         .anyRequest()
-                        .authenticated()
-                )
+                        .authenticated())
 
-                .oauth2ResourceServer(oauth ->
-                        oauth.jwt(jwt ->
-                                jwt.jwtAuthenticationConverter(
-                                        jwtAuthenticationConverter
-                                )
-                        )
-                )
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
 
                 .build();
     }

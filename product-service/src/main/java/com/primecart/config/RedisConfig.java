@@ -18,29 +18,28 @@ public class RedisConfig {
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
-        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                                                                       .prefixCacheNameWith("primecart::")
-                                                                       .disableCachingNullValues();
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
+                .defaultCacheConfig()
+                .prefixCacheNameWith("primecart::")
+                .disableCachingNullValues();
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
         // Cache: Product by ID
-        cacheConfigurations.put(
-                "products",
-                defaultConfig.entryTtl(Duration.ofMinutes(10))
-        );
+        cacheConfigurations.put("products", defaultConfig.entryTtl(Duration.ofMinutes(10)));
 
         // Cache: All Products
-        cacheConfigurations.put(
-                "allProducts",
-                defaultConfig.entryTtl(Duration.ofMinutes(5))
-        );
+        cacheConfigurations.put("allProducts", defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
-        return RedisCacheManager.builder(connectionFactory)
-                                .cacheDefaults(defaultConfig)
+        cacheConfigurations.put(CacheNames.CATEGORIES, defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
-                                .withInitialCacheConfigurations(cacheConfigurations)
-                                .transactionAware()
-                                .build();
+        cacheConfigurations.put(CacheNames.BRANDS, defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        return RedisCacheManager
+                .builder(connectionFactory)
+                .cacheDefaults(defaultConfig)
+
+                .withInitialCacheConfigurations(cacheConfigurations)
+                .transactionAware()
+                .build();
     }
 }
