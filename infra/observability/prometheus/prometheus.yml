@@ -37,6 +37,12 @@ scrape_configs:
       - targets:
           - host.docker.internal:8085
 
+  - job_name: customer-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8086
+          -
   - job_name: "rabbitmq"
     static_configs:
       - targets:

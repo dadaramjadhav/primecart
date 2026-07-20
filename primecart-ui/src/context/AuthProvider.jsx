@@ -61,6 +61,22 @@ function AuthProvider({ children }) {
       window.location.replace("/")
     }
   }, [])
+  const forgotPassword = useCallback(async () => {
+    const loginUrl = await keycloak.createLoginUrl({
+      redirectUri: `${window.location.origin}/login`,
+    })
+
+    const resetUrl = loginUrl.replace("/protocol/openid-connect/auth?", "/protocol/openid-connect/forgot-credentials?")
+
+    window.location.assign(resetUrl)
+  }, [])
+
+  const changePassword = useCallback(() => {
+    return keycloak.login({
+      action: "UPDATE_PASSWORD",
+      redirectUri: `${window.location.origin}/profile`,
+    })
+  }, [])
 
   const value = useMemo(
     () => ({
@@ -68,8 +84,10 @@ function AuthProvider({ children }) {
       user: authState.user,
       login,
       logout,
+      forgotPassword,
+      changePassword,
     }),
-    [authState, login, logout],
+    [authState, login, logout, forgotPassword, changePassword],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

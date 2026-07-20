@@ -11,6 +11,7 @@ import ProtectedRoute from "./ProtectedRoute"
 import OrderDetails from "../pages/OrderDetails"
 import Payment from "../pages/Payment"
 import NotFound from "../pages/NotFound"
+import Profile from "../pages/Profile"
 
 function UserRoutes() {
   return (
@@ -63,6 +64,14 @@ function UserRoutes() {
           element={
             <ProtectedRoute>
               <ProductDetails />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

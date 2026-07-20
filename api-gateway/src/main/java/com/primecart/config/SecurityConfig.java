@@ -37,7 +37,7 @@ public class SecurityConfig {
 
                         .pathMatchers("/actuator", "/actuator/metrics/**", "/actuator/caches/**")
                         .hasRole("ACTUATOR_ADMIN")
- 
+
                         .pathMatchers("/dev/token")
                         .permitAll()
 
@@ -131,6 +131,12 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.PUT, "/api/payments/*/retry")
                         .hasRole("PAYMENT_RETRY")
 
+                        .pathMatchers(HttpMethod.GET, "/api/customers/me")
+                        .hasRole("PROFILE_READ")
+
+                        .pathMatchers(HttpMethod.PUT, "/api/customers/me")
+                        .hasRole("PROFILE_UPDATE")
+                        
                         .anyExchange()
                         .authenticated())
 

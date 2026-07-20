@@ -70,7 +70,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/primecart
+          issuer-uri: https://localhost:8443/realms/primecart
 
 management:
   endpoint:

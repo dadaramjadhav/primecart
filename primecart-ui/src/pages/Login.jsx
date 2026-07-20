@@ -1,9 +1,9 @@
 import { useLocation } from "react-router-dom"
-import useAuth from "../../shared/hooks/useAuth"
+import useAuth from "../shared/hooks/useAuth"
 import { useSearchParams } from "react-router-dom"
 
 function Login() {
-  const { login } = useAuth()
+  const { login, forgotPassword } = useAuth()
   const location = useLocation()
   const redirectPath = location.state?.from?.pathname ?? "/"
   const [searchParams] = useSearchParams()
@@ -31,6 +31,12 @@ function Login() {
             onClick={handleUserLogin}
             className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700">
             User Login
+          </button>
+          <button
+            type="button"
+            onClick={forgotPassword}
+            className="mt-4 w-full text-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+            Forgot password?
           </button>
           <button
             type="button"

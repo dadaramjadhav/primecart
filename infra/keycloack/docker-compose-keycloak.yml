@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -9,6 +7,11 @@ services:
 
     ports:
       - "8080:8080"
+      - "8443:8443"   # HTTPS
+
+    volumes:
+      - /Users/dadaramjadhav/primecart/infra/tls/localhost-cert.pem:/opt/keycloak/conf/tls/localhost-cert.pem:ro
+      - /Users/dadaramjadhav/primecart/infra/tls/localhost-key.pem:/opt/keycloak/conf/tls/localhost-key.pem:ro
 
     environment:
       KC_DB: mysql
@@ -17,6 +20,8 @@ services:
       KC_DB_PASSWORD: Admin@12345
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin123
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/tls/localhost-cert.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/tls/localhost-key.pem
 
     extra_hosts:
       - "host.docker.internal:host-gateway"

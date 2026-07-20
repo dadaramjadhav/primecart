@@ -1,3 +1,7 @@
 .env
 .env.local
 .env.*.local
+infra/tls/*.pem
+infra/tls/*.key
+infra/tls/*.p12
+infra/tls/*.jks
