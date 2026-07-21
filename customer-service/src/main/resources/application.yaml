@@ -66,7 +66,24 @@ info:
     description: PrimeCart Customer Microservice
     version: 1.0.0
 
+
 logging:
   level:
+    root: INFO
+
+    # PrimeCart application code
+    com.primecart: DEBUG
+
+    # Frameworks
+    org.springframework: INFO
     org.springframework.security: INFO
-#    org.hibernate.SQL: DEBUG
+    org.springframework.web: INFO
+
+    # Database
+    org.hibernate: INFO
+    org.hibernate.SQL: INFO
+    com.zaxxer.hikari: INFO
+
+    # Observability libraries
+    io.micrometer: INFO
+    io.opentelemetry: INFO

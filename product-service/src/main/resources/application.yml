@@ -91,10 +91,6 @@ info:
     description: PrimeCart Product Microservice
     version: 1.0.0
 
-logging:
-  level:
-    org.springframework.security: DEBUG
-
 #retry config
 resilience4j:
   retry:
@@ -105,3 +101,24 @@ resilience4j:
         retry-exceptions:
           - java.io.IOException
 #          - feign.RetryableException
+
+logging:
+  level:
+    root: INFO
+
+    # PrimeCart application code
+    com.primecart: DEBUG
+
+    # Frameworks
+    org.springframework: INFO
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+
+    # Database
+    org.hibernate: INFO
+    org.hibernate.SQL: INFO
+    com.zaxxer.hikari: INFO
+
+    # Observability libraries
+    io.micrometer: INFO
+    io.opentelemetry: INFO

@@ -531,3 +531,5 @@ curl -i \
   -d '{"phone":"+91 9876543210"}' \
   https://localhost:8181/api/customers/me
 This completes the first backend flow. The next phase would add shipping addresses as a separate customer_addresses table linked to customer_profiles.id.
+
+

@@ -1,0 +1,95 @@
+services:
+  splunk:
+    image: splunk/splunk:10.2.5
+    platform: linux/amd64
+
+    container_name: primecart-splunk
+    hostname: primecart-splunk
+
+    environment:
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_GENERAL_TERMS: "--accept-sgt-current-at-splunk-com"
+      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD}"
+
+      SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN}"
+      SPLUNK_HEC_ENABLE: "true"
+      SPLUNK_HEC_SSL: "false"
+
+      TZ: "Asia/Kolkata"
+
+    ports:
+      - "8000:8000"
+      - "8088:8088"
+      - "8089:8089"
+      - "9997:9997"
+
+    volumes:
+      - splunk-etc:/opt/splunk/etc
+      - splunk-var:/opt/splunk/var
+
+    networks:
+      - microservices-network
+
+    restart: unless-stopped
+
+  customer-otel-state-init:
+    image: busybox:1.36
+    container_name: primecart-customer-otel-state-init
+
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /var/lib/otelcol
+        chmod -R 0777 /var/lib/otelcol
+
+    volumes:
+      - customer-otel-state:/var/lib/otelcol
+
+    restart: "no"
+
+  customer-otel-collector:
+    image: quay.io/signalfx/splunk-otel-collector:0.150.0
+    container_name: primecart-customer-otel-collector
+
+    command:
+      - "--config=/etc/otelcol-contrib/config.yaml"
+
+    environment:
+      SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN}"
+
+    volumes:
+      - ./customer-otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+
+      - /Users/dadaramjadhav/primecart/logs:/var/log/primecart:ro
+
+      - customer-otel-state:/var/lib/otelcol
+
+    ports:
+      - "13134:13133"
+
+    depends_on:
+      splunk:
+        condition: service_healthy
+
+      customer-otel-state-init:
+        condition: service_completed_successfully
+
+    networks:
+      - microservices-network
+
+    restart: unless-stopped
+
+networks:
+  microservices-network:
+    external: true
+
+volumes:
+  splunk-etc:
+    name: primecart-splunk-etc
+
+  splunk-var:
+    name: primecart-splunk-var
+
+  customer-otel-state:
+    name: primecart-customer-otel-state

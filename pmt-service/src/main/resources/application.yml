@@ -113,12 +113,27 @@ info:
     description: PrimeCart Payment Microservice
     version: 1.0.0
 
+
+
 logging:
   level:
     root: INFO
+
+    # PrimeCart application code
     com.primecart: DEBUG
+
+    # Frameworks
+    org.springframework: INFO
+    org.springframework.security: INFO
     org.springframework.web: INFO
+
+    # Database
+    org.hibernate: INFO
+    org.hibernate.SQL: INFO
+    com.zaxxer.hikari: INFO
+
+    # Observability libraries
+    io.micrometer: INFO
+    io.opentelemetry: INFO
+
     com.primecart.config.OrderClientCredentialsFeignConfig: TRACE
-#    org.hibernate.SQL: DEBUG
-#    org.hibernate.orm.jdbc.bind: TRACE
-#    org.springframework.security: DEBUG
