@@ -11,7 +11,7 @@ services:
       - "3200:3200"
     restart: unless-stopped
     networks:
-      - microservices-network
+      - primecart-nw
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -27,7 +27,7 @@ services:
       - tempo
     restart: unless-stopped
     networks:
-      - microservices-network
+      - primecart-nw
 
   prometheus:
     image: prom/prometheus:latest
@@ -42,7 +42,7 @@ services:
       - "9090:9090"
     restart: unless-stopped
     networks:
-      - microservices-network
+      - primecart-nw
 
   grafana:
     image: grafana/grafana:latest
@@ -56,7 +56,7 @@ services:
       - prometheus
     restart: unless-stopped
     networks:
-      - microservices-network
+      - primecart-nw
 
 volumes:
   tempo-data:
@@ -64,5 +64,5 @@ volumes:
   grafana-data:
 
 networks:
-  microservices-network:
+  primecart-nw:
     external: true

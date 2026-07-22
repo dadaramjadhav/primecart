@@ -29,8 +29,8 @@ services:
     restart: unless-stopped
 
     networks:
-      - microservices-network
+      - primecart-nw
 
 networks:
-  microservices-network:
+  primecart-nw:
     external: true

@@ -28,60 +28,60 @@ services:
       - splunk-var:/opt/splunk/var
 
     networks:
-      - microservices-network
+      - primecart-nw
 
     restart: unless-stopped
 
-  customer-otel-state-init:
-    image: busybox:1.36
-    container_name: primecart-customer-otel-state-init
+  # Splunk log forwarding now uses Logstash fan-out. Keep this configuration
+  # commented so it can be restored later without sending duplicate events.
+  # primecart-otel-state-init:
+  #   image: busybox:1.36
+  #   container_name: primecart-otel-state-init
+  #
+  #   command:
+  #     - sh
+  #     - -c
+  #     - |
+  #       mkdir -p /var/lib/otelcol
+  #       chmod -R 0777 /var/lib/otelcol
+  #
+  #   volumes:
+  #     - primecart-otel-state:/var/lib/otelcol
+  #
+  #   restart: "no"
 
-    command:
-      - sh
-      - -c
-      - |
-        mkdir -p /var/lib/otelcol
-        chmod -R 0777 /var/lib/otelcol
-
-    volumes:
-      - customer-otel-state:/var/lib/otelcol
-
-    restart: "no"
-
-  customer-otel-collector:
-    image: quay.io/signalfx/splunk-otel-collector:0.150.0
-    container_name: primecart-customer-otel-collector
-
-    command:
-      - "--config=/etc/otelcol-contrib/config.yaml"
-
-    environment:
-      SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN}"
-
-    volumes:
-      - ./customer-otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
-
-      - /Users/dadaramjadhav/primecart/logs:/var/log/primecart:ro
-
-      - customer-otel-state:/var/lib/otelcol
-
-    ports:
-      - "13134:13133"
-
-    depends_on:
-      splunk:
-        condition: service_healthy
-
-      customer-otel-state-init:
-        condition: service_completed_successfully
-
-    networks:
-      - microservices-network
-
-    restart: unless-stopped
+  # primecart-otel-collector:
+  #   image: quay.io/signalfx/splunk-otel-collector:0.150.0
+  #   container_name: primecart-otel-collector
+  #
+  #   command:
+  #     - "--config=/etc/otelcol-contrib/config.yaml"
+  #
+  #   environment:
+  #     SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN}"
+  #
+  #   volumes:
+  #     - ./primecart-otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+  #     - /Users/dadaramjadhav/primecart/logs:/var/log/primecart:ro
+  #     - primecart-otel-state:/var/lib/otelcol
+  #
+  #   ports:
+  #     - "13134:13133"
+  #
+  #   depends_on:
+  #     splunk:
+  #       condition: service_healthy
+  #
+  #     primecart-otel-state-init:
+  #       condition: service_completed_successfully
+  #
+  #   networks:
+  #     - primecart-nw
+  #
+  #   restart: unless-stopped
 
 networks:
-  microservices-network:
+  primecart-nw:
     external: true
 
 volumes:
@@ -91,5 +91,5 @@ volumes:
   splunk-var:
     name: primecart-splunk-var
 
-  customer-otel-state:
-    name: primecart-customer-otel-state
+  # primecart-otel-state:
+  #   name: primecart-otel-state

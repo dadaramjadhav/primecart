@@ -16,14 +16,14 @@ services:
       - elasticsearch-data:/usr/share/elasticsearch/data
 
     networks:
-      - microservices-network
+      - primecart-nw
 
   logstash:
     image: docker.elastic.co/logstash/logstash:8.18.3
     container_name: logstash
 
-    #    environment:
-    #      SPLUNK_HEC_TOKEN: "8c953faa-8cac-4c32-8c9d-primecart-hec"
+    environment:
+      SPLUNK_HEC_TOKEN: "8c953faa-8cac-4c32-8c9d-primecart-hec"
     ports:
       - "5044:5044"
       - "5001:5000"
@@ -35,7 +35,7 @@ services:
       - elasticsearch
 
     networks:
-      - microservices-network
+      - primecart-nw
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.18.3
@@ -51,11 +51,11 @@ services:
       - elasticsearch
 
     networks:
-      - microservices-network
+      - primecart-nw
 
 volumes:
   elasticsearch-data:
 
 networks:
-  microservices-network:
+  primecart-nw:
     external: true

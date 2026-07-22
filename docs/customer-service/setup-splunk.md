@@ -270,7 +270,7 @@ number, or request body into application logs.
 The Collector configuration is:
 
 ```text
-infra/splunk/customer-otel-collector.yaml
+infra/splunk/primecart-otel-collector.yaml
 ```
 
 Use this configuration:
@@ -389,9 +389,9 @@ open /var/lib/otelcol/exporter_splunk_hec_customer_logs: permission denied
 Add a volume initialization service:
 
 ```yaml
-  customer-otel-state-init:
+  primecart-otel-state-init:
     image: busybox:1.36
-    container_name: primecart-customer-otel-state-init
+    container_name: primecart-otel-state-init
 
     command:
       - sh
@@ -401,7 +401,7 @@ Add a volume initialization service:
         chmod -R 0777 /var/lib/otelcol
 
     volumes:
-      - customer-otel-state:/var/lib/otelcol
+      - primecart-otel-state:/var/lib/otelcol
 
     restart: "no"
 ```
@@ -415,9 +415,9 @@ use narrower permissions.
 Add this service to `infra/splunk/docker-compose-splunk.yml`:
 
 ```yaml
-  customer-otel-collector:
+  primecart-otel-collector:
     image: quay.io/signalfx/splunk-otel-collector:0.150.0
-    container_name: primecart-customer-otel-collector
+    container_name: primecart-otel-collector
 
     command:
       - "--config=/etc/otelcol-contrib/config.yaml"
@@ -426,9 +426,9 @@ Add this service to `infra/splunk/docker-compose-splunk.yml`:
       SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN}"
 
     volumes:
-      - ./customer-otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./primecart-otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
       - /Users/dadaramjadhav/primecart/logs:/var/log/primecart:ro
-      - customer-otel-state:/var/lib/otelcol
+      - primecart-otel-state:/var/lib/otelcol
 
     ports:
       - "13134:13133"
@@ -437,7 +437,7 @@ Add this service to `infra/splunk/docker-compose-splunk.yml`:
       splunk:
         condition: service_healthy
 
-      customer-otel-state-init:
+      primecart-otel-state-init:
         condition: service_completed_successfully
 
     networks:
@@ -456,8 +456,8 @@ volumes:
   splunk-var:
     name: primecart-splunk-var
 
-  customer-otel-state:
-    name: primecart-customer-otel-state
+  primecart-otel-state:
+    name: primecart-otel-state
 ```
 
 The host log directory is mounted read-only. Only the Collector state volume is
@@ -495,8 +495,8 @@ Expected state:
 
 ```text
 primecart-splunk                       Up (healthy)
-primecart-customer-otel-state-init     Exited (0)
-primecart-customer-otel-collector      Up
+primecart-otel-state-init     Exited (0)
+primecart-otel-collector      Up
 ```
 
 `Exited (0)` is correct for the one-time initializer.
@@ -506,7 +506,7 @@ Inspect Collector logs:
 ```bash
 docker compose \
   -f /Users/dadaramjadhav/primecart/infra/splunk/docker-compose-splunk.yml \
-  logs -f customer-otel-collector
+  logs -f primecart-otel-collector
 ```
 
 Check Collector health:
@@ -734,14 +734,14 @@ open /var/lib/otelcol/exporter_splunk_hec_customer_logs: permission denied
 Cause: the named volume was created as root, while the Collector runs as a
 non-root user.
 
-Fix: retain `customer-otel-state-init`, confirm it exits with code `0`, and
+Fix: retain `primecart-otel-state-init`, confirm it exits with code `0`, and
 force-recreate the Collector:
 
 ```bash
 docker compose \
   --env-file /Users/dadaramjadhav/primecart/infra/splunk/.env \
   -f /Users/dadaramjadhav/primecart/infra/splunk/docker-compose-splunk.yml \
-  up -d --force-recreate customer-otel-state-init customer-otel-collector
+  up -d --force-recreate primecart-otel-state-init primecart-otel-collector
 ```
 
 ### Framework logs appear but API access logs do not
@@ -808,4 +808,3 @@ time zone as `Asia/Kolkata` and keep event storage timezone-aware.
 - [ ] Trace and span IDs appear when a request has tracing context.
 - [ ] No access tokens, passwords, or personal data are logged.
 - [ ] ELK output is removed only after the Splunk path is verified.
-
