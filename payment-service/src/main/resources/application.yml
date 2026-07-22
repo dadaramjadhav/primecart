@@ -1,6 +1,7 @@
 spring:
   application:
-    name: inventory-service
+    name: payment-service
+
   config:
     import: configserver:http://localhost:8888
 

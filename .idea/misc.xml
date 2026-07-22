@@ -8,17 +8,13 @@
         <option value="$PROJECT_DIR$/api-gateway/pom.xml" />
         <option value="$PROJECT_DIR$/cart-service/pom.xml" />
         <option value="$PROJECT_DIR$/inventory-service/pom.xml" />
-        <option value="$PROJECT_DIR$/payment-service/pom.xml" />
         <option value="$PROJECT_DIR$/pmt-service/pom.xml" />
         <option value="$PROJECT_DIR$/product-service/pom.xml" />
         <option value="$PROJECT_DIR$/sb-admin-server/pom.xml" />
         <option value="$PROJECT_DIR$/customer-service/pom.xml" />
-      </list>
-    </option>
-    <option name="ignoredFiles">
-      <set>
         <option value="$PROJECT_DIR$/payment-service/pom.xml" />
-      </set>
+        <option value="$PROJECT_DIR$/config-server/pom.xml" />
+      </list>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="homebrew-17" project-jdk-type="JavaSDK">

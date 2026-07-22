@@ -10,7 +10,7 @@ services:
 
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: 123
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
 
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq

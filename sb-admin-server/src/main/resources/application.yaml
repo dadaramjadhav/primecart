@@ -8,7 +8,7 @@ spring:
   security:
     user:
       name: admin
-      password: 123
+      password: ${SBA_PASSWORD}
 
 management:
   endpoints:

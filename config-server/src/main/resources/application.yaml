@@ -1,0 +1,36 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+
+  boot:
+    admin:
+      client:
+        url: http://localhost:9191
+        username: admin
+        password: ${SBA_PASSWORD}
+
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/dadaramjadhav/primecart-config.git
+          username: dadaramjadhav
+          password: ${GITHUB_ACCESS_TOKEN}
+
+          default-label: main
+          clone-on-start: true
+          timeout: 10
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+  endpoint:
+    health:
+      show-details: always

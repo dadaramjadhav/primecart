@@ -533,3 +533,7 @@ curl -i \
 This completes the first backend flow. The next phase would add shipping addresses as a separate customer_addresses table linked to customer_profiles.id.
 
 
+
+SBA_PASSWORD=123
+RABBITMQ_PASSWORD=123
+DB_PASSWORD=Admin@12345

@@ -9,3 +9,7 @@ infra/tls/*.jks
 splunk/.env
 splunk/licenses/*.lic
 logs/
+
+infra/secrets/*.env
+.env
+*.env

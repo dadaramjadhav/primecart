@@ -23,7 +23,7 @@ services:
     container_name: logstash
 
     environment:
-      SPLUNK_HEC_TOKEN: "8c953faa-8cac-4c32-8c9d-primecart-hec"
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN}
     ports:
       - "5044:5044"
       - "5001:5000"

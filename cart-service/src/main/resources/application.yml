@@ -1,95 +1,9 @@
-server:
-  port: 8083
-
-primecart:
-  security:
-    jwt:
-      audience: primecart-api
-
 spring:
   application:
     name: cart-service
+  config:
+    import: configserver:http://localhost:8888
 
-  boot:
-    admin:
-      client:
-        url: http://localhost:9191
-        username: admin
-        password: 123
   cloud:
-    openfeign:
-      micrometer:
-        enabled: true
-  datasource:
-    url: jdbc:mysql://localhost:3306/cart_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-    username: root
-    password: Admin@12345
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    #    show-sql: true
-  #    properties:
-  #      hibernate:
-  #        format_sql: true
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://localhost:8443/realms/primecart
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus,caches
-  endpoint:
-    health:
-      show-details: when-authorized
-
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0
-
-  otlp:
-    tracing:
-      endpoint: http://localhost:4318/v1/traces
-info:
-  app:
-    name: Cart Service
-    description: PrimeCart Cart Microservice
-    version: 1.0.0
-
-
-logging:
-  level:
-    root: INFO
-
-    # PrimeCart application code
-    com.primecart: DEBUG
-
-    # Frameworks
-    org.springframework: INFO
-    org.springframework.security: INFO
-    org.springframework.web: INFO
-
-    # Database
-    org.hibernate: INFO
-    org.hibernate.SQL: INFO
-    com.zaxxer.hikari: INFO
-
-    # Observability libraries
-    io.micrometer: INFO
-    io.opentelemetry: INFO
+    config:
+      label: main
