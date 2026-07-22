@@ -7,7 +7,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 @Slf4j
 public class OrderClientCredentialsFeignConfig {
@@ -41,28 +40,6 @@ public class OrderClientCredentialsFeignConfig {
             String serviceAccessToken = authorizedClient
                     .getAccessToken()
                     .getTokenValue();
-            //start********* just for adding token in console for checking
-            if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
-
-                String uiAccessToken = jwtAuthentication
-                        .getToken()
-                        .getTokenValue();
-
-                log.trace("INCOMING UI ACCESS TOKEN: {}", uiAccessToken);
-
-                log.trace("Incoming UI token subject={}, username={}, audience={}", jwtAuthentication
-                        .getToken()
-                        .getSubject(), jwtAuthentication
-                                  .getToken()
-                                  .getClaimAsString("preferred_username"), jwtAuthentication
-                                  .getToken()
-                                  .getAudience());
-            } else {
-                log.trace("No incoming UI JWT found in SecurityContext");
-            }
-
-            log.trace("OUTGOING PAYMENT-SERVICE TOKEN: {}", serviceAccessToken);
-            //end****************
 
             requestTemplate.header("Authorization", "Bearer " + serviceAccessToken);
         };

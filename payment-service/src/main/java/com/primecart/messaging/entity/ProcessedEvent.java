@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "processed_events", uniqueConstraints = {@UniqueConstraint(name = "uk_payment_processed_event_id", columnNames = "event_id")})
+@Table(name = "processed_events",
+       uniqueConstraints = {@UniqueConstraint(name = "uk_payment_processed_event_id",
+                                              columnNames = "event_id")})
 @Getter
 @Setter
 @Builder
@@ -21,14 +23,17 @@ public class ProcessedEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "event_id", nullable = false, length = 36)
+    @Column(name = "event_id",
+            nullable = false,
+            length = 36)
     private UUID eventId;
-//    @Column(name = "event_id", nullable = false, length = 36)
-//    private UUID eventId;
 
-    @Column(name = "event_type", nullable = false, length = 100)
+    @Column(name = "event_type",
+            nullable = false,
+            length = 100)
     private String eventType;
 
-    @Column(name = "processed_at", nullable = false)
+    @Column(name = "processed_at",
+            nullable = false)
     private LocalDateTime processedAt;
 }

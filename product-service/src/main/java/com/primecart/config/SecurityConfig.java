@@ -34,10 +34,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/actuator", "/actuator/metrics/**", "/actuator/caches/**")
                         .hasRole("ACTUATOR_ADMIN")
-
-                        .requestMatchers("/actuator", "/actuator/metrics/**", "/actuator/caches/**")
-                        .hasRole("ACTUATOR_ADMIN")
-
+                        
                         .requestMatchers(HttpMethod.GET, "/api/categories/**")
                         .hasRole("CATEGORY_READ")
 

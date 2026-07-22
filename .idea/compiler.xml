@@ -7,6 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="api-gateway" />
         <module name="sb-admin-server" />
       </profile>
       <profile name="Annotation profile for product-service" enabled="true">
@@ -21,7 +22,6 @@
         <module name="payment-service" />
         <module name="inventory-service" />
         <module name="customer-service" />
-        <module name="api-gateway" />
         <module name="product-service" />
         <module name="order-service" />
       </profile>

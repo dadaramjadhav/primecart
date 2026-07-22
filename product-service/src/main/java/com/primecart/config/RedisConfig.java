@@ -26,10 +26,10 @@ public class RedisConfig {
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
         // Cache: Product by ID
-        cacheConfigurations.put("products", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigurations.put(CacheNames.PRODUCTS, defaultConfig.entryTtl(Duration.ofMinutes(10)));
 
         // Cache: All Products
-        cacheConfigurations.put("allProducts", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put(CacheNames.ALL_PRODUCTS, defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
         cacheConfigurations.put(CacheNames.CATEGORIES, defaultConfig.entryTtl(Duration.ofMinutes(30)));
 

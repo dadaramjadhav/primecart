@@ -24,7 +24,6 @@ spring:
           clone-on-start: true
           timeout: 10
 
-
 management:
   endpoints:
     web:

@@ -5,15 +5,15 @@ import com.primecart.dto.response.PaymentResponse;
 
 public interface PaymentService {
 
-    PaymentResponse createPayment(CreatePaymentRequest request);
+    PaymentResponse createPayment(CreatePaymentRequest request, String currentUserId);
 
-    PaymentResponse getPayment(Long id);
+    PaymentResponse getPayment(Long id, String currentUserId, boolean admin);
 
-    PaymentResponse getPaymentByOrder(Long orderId);
+    PaymentResponse getPaymentByOrder(Long orderId, String currentUserId, boolean admin);
 
-    PaymentResponse markSuccess(Long id);
+    PaymentResponse markSuccess(Long id, String currentUserId, boolean admin);
 
-    PaymentResponse markFailed(Long id);
+    PaymentResponse markFailed(Long id, String currentUserId, boolean admin);
 
-    PaymentResponse retryPayment(Long id);
+    PaymentResponse retryPayment(Long id, String currentUserId, boolean admin);
 }

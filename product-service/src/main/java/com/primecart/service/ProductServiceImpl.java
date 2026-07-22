@@ -1,5 +1,6 @@
 package com.primecart.service;
 
+import com.primecart.config.CacheNames;
 import com.primecart.dto.request.CreateProductRequest;
 import com.primecart.dto.request.UpdateProductRequest;
 import com.primecart.dto.response.ProductResponse;
@@ -46,7 +47,7 @@ public class ProductServiceImpl implements ProductService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @PreAuthorize("hasRole('PRODUCT_CREATE')")
-    @CacheEvict(value = "allProducts",
+    @CacheEvict(value = CacheNames.ALL_PRODUCTS,
                 allEntries = true)
     @Override
     @Transactional
@@ -54,19 +55,8 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("Creating product: {}", request.name());
 
-        Category category = categoryRepository
-                .findById(request.categoryId())
-                .orElseThrow(() -> {
-                    log.warn("Category not found with id: {}", request.categoryId());
-                    return new ResourceNotFoundException("Category not found with id: " + request.categoryId());
-                });
-
-        Brand brand = brandRepository
-                .findById(request.brandId())
-                .orElseThrow(() -> {
-                    log.warn("Brand not found with id: {}", request.brandId());
-                    return new ResourceNotFoundException("Brand not found with id: " + request.brandId());
-                });
+        Category category = getCategory(request.categoryId());
+        Brand brand = getBrand(request.brandId());
 
         Product product = productMapper.toEntity(request, category, brand);
 
@@ -82,100 +72,73 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(savedProduct);
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('PRODUCT_READ')")
-    @Cacheable(value = "products",
+    @Cacheable(value = CacheNames.PRODUCTS,
                key = "#id")
     @Override
     public ProductResponse getProductById(Long id) {
 
-        log.info("Fetching product with id: {}", id);
+        Product product = getProduct(id);
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
-                    productMetrics.incrementProductNotFound();
-                    return new ResourceNotFoundException("Product not found with id: " + id);
-                });
-
-        log.info("Product fetched successfully with id: {}", id);
         return productMapper.toResponse(product);
     }
 
     @Override
+    @PreAuthorize("hasRole('PRODUCT_READ')")
+    @Transactional(readOnly = true)
     public List<ProductResponse> getActiveProducts() {
-        return List.of();
+        return productRepository
+                .findByActive(true)
+                .stream()
+                .map(productMapper::toResponse)
+                .toList();
     }
 
+    @Transactional
     @PreAuthorize("hasRole('PRODUCT_UPDATE')")
-    @Caching(evict = {@CacheEvict(value = "products",
-                                  key = "#id"), @CacheEvict(value = "allProducts",
+    @Caching(evict = {@CacheEvict(value = CacheNames.PRODUCTS,
+                                  key = "#id"), @CacheEvict(value = CacheNames.ALL_PRODUCTS,
                                                             allEntries = true)})
     @Override
     public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
 
         log.info("Updating product with id: {}", id);
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
-                    productMetrics.incrementProductNotFound();
-                    return new ResourceNotFoundException("Product not found with id: " + id);
-                });
-
-        Category category = categoryRepository
-                .findById(request.categoryId())
-                .orElseThrow(() -> {
-                    log.warn("Category not found with id: {}", request.categoryId());
-                    return new ResourceNotFoundException("Category not found with id: " + request.categoryId());
-                });
-
-        Brand brand = brandRepository
-                .findById(request.brandId())
-                .orElseThrow(() -> {
-                    log.warn("Brand not found with id: {}", request.brandId());
-                    return new ResourceNotFoundException("Brand not found with id: " + request.brandId());
-                });
+        Product product = getProduct(id);
+        Category category = getCategory(request.categoryId());
+        Brand brand = getBrand(request.brandId());
 
         productMapper.updateEntity(product, request, category, brand);
 
-        Product updatedProduct = productRepository.save(product);
+        log.info("Product updated successfully with id: {}", product.getId());
 
-        log.info("Product updated successfully with id: {}", updatedProduct.getId());
-
-        return productMapper.toResponse(updatedProduct);
+        return productMapper.toResponse(product);
     }
 
+    @Transactional
     @PreAuthorize("hasRole('PRODUCT_DELETE')")
-    @Caching(evict = {@CacheEvict(value = "products",
-                                  key = "#id"), @CacheEvict(value = "allProducts",
+    @Caching(evict = {@CacheEvict(value = CacheNames.PRODUCTS,
+                                  key = "#id"), @CacheEvict(value = CacheNames.ALL_PRODUCTS,
                                                             allEntries = true)})
     @Override
     public void deleteProduct(Long id) {
 
         log.info("Deleting product with id: {}", id);
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
-                    productMetrics.incrementProductNotFound();
-                    return new ResourceNotFoundException("Product not found with id: " + id);
-                });
+        Product product = getProduct(id);
 
         productRepository.delete(product);
 
         log.info("Product deleted successfully with id: {}", id);
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('PRODUCT_READ')")
-    @Cacheable(value = "allProducts")
+    @Cacheable(value = CacheNames.ALL_PRODUCTS)
     @Override
     public Page<ProductResponse> getProducts(Long category, Long brand, Boolean active, String keyword, int page, int size, String sortBy,
                                              String direction) {
-
-        log.info("Fetching products with filters - category={}, brand={}, active={}, keyword={}", category, brand, active, keyword);
 
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort
                                                          .by(sortBy)
@@ -199,8 +162,37 @@ public class ProductServiceImpl implements ProductService {
             productPage = productRepository.findAll(pageable);
         }
 
-        log.info("Found {} products", productPage.getTotalElements());
-
         return productPage.map(productMapper::toResponse);
+    }
+
+    private Category getCategory(Long id) {
+
+        return categoryRepository
+                .findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Category not found with id: {}", id);
+                    return new ResourceNotFoundException("Category not found with id: " + id);
+                });
+    }
+
+    private Brand getBrand(Long id) {
+
+        return brandRepository
+                .findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Brand not found with id: {}", id);
+                    return new ResourceNotFoundException("Brand not found with id: " + id);
+                });
+    }
+
+    private Product getProduct(Long id) {
+
+        return productRepository
+                .findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product not found with id: {}", id);
+                    productMetrics.incrementProductNotFound();
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
     }
 }

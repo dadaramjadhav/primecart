@@ -21,8 +21,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
-    boolean existsByOrderNumber(String orderNumber);
-
     Page<Order> findByCustomerId(String customerId, Pageable pageable);
 
     Optional<Order> findById(Long id);
@@ -33,5 +31,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             from Order orders
             where orders.id = :orderId
             """)
-    Optional<Order> findByIdForUpdate(@Param("orderId") Long orderId);
+    Optional<Order> findByIdForUpdate(
+            @Param("orderId")
+            Long orderId);
 }

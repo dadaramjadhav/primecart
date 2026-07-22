@@ -57,6 +57,7 @@ public class OrderServiceImpl implements OrderService {
                 .getSubject();
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ORDER_READ_OWN')")
     @Override
     public Page<OrderResponse> getMyOrders(Pageable pageable) {
@@ -142,16 +143,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * Reserve inventory.
-     */
-    private void reserveInventory(CartItemResponse cartItem) {
-
-        ReserveStockRequest request = new ReserveStockRequest(cartItem.getProductId(), cartItem.getQuantity());
-
-        inventoryIntegrationService.reserveStock(request);
-    }
-
-    /**
      * Calculate subtotal.
      */
     private BigDecimal calculateSubtotal(BigDecimal price, Integer quantity) {
@@ -172,97 +163,7 @@ public class OrderServiceImpl implements OrderService {
                 .toUpperCase();
     }
 
-//    @Transactional
-//    @Override
-//    public OrderResponse createOrder(CreateOrderRequest request) {
-//
-//        // Reserve stock first
-//        for (OrderItemRequest itemRequest : request.getItems()) {
-//
-//            ReserveStockRequest reserve =
-//                    new ReserveStockRequest();
-//
-//            reserve.setProductId(
-//                    itemRequest.getProductId()
-//            );
-//
-//            reserve.setQuantity(
-//                    itemRequest.getQuantity()
-//            );
-//
-//            inventoryClient.reserveStock(reserve);
-//
-//        }
-//
-//        Order order = Order.builder()
-//                           .orderNumber(
-//                                   UUID.randomUUID()
-//                                       .toString()
-//                           )
-//                           .customerId(
-//                                   getCurrentUserId()
-//                           )
-//                           .status(
-//                                   OrderStatus.CREATED
-//                           )
-//                           .totalAmount(
-//                                   BigDecimal.ZERO
-//                           )
-//                           .build();
-//
-//        BigDecimal totalAmount =
-//                BigDecimal.ZERO;
-//
-//        for (OrderItemRequest requestItem : request.getItems()) {
-//
-//            // Get product details
-//            ProductResponse product =
-//                    productClient.getProduct(
-//                            requestItem.getProductId()
-//                    );
-//
-//            BigDecimal subtotal =
-//                    product.getPrice()
-//                           .multiply(
-//                                   BigDecimal.valueOf(
-//                                           requestItem.getQuantity()
-//                                   )
-//                           );
-//
-//            OrderItem orderItem =
-//                    OrderItem.builder()
-//                             .productId(
-//                                     product.getId()
-//                             )
-//                             .productName(
-//                                     product.getName()
-//                             )
-//                             .price(
-//                                     product.getPrice()
-//                             )
-//                             .quantity(
-//                                     requestItem.getQuantity()
-//                             )
-//                             .subtotal(
-//                                     subtotal
-//                             )
-//                             .build();
-//
-//            order.addItem(orderItem);
-//
-//            totalAmount =
-//                    totalAmount.add(subtotal);
-//
-//        }
-//
-//        order.setTotalAmount(totalAmount);
-//
-//        Order saved =
-//                orderRepository.save(order);
-//
-//        return mapToResponse(saved);
-//    }
-
+    @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('ORDER_READ_OWN', 'ORDER_READ_ALL')")
     @Override
     public OrderResponse getOrderById(Long id) {
@@ -276,6 +177,7 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toResponse(order);
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('ORDER_READ_OWN', 'ORDER_READ_ALL')")
     @Override
     public OrderResponse getOrderByOrderNumber(String orderNumber) {
@@ -289,6 +191,7 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toResponse(order);
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ORDER_READ_ALL')")
     @Override
     public Page<OrderResponse> getAllOrders(Pageable pageable) {
@@ -300,6 +203,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ORDER_READ_ALL')")
     @Override
     public List<OrderResponse> getOrdersByCustomerId(String customerId) {
@@ -313,6 +217,7 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ORDER_READ_ALL')")
     @Override
     public Page<OrderResponse> getOrdersByStatus(OrderStatus status, Pageable pageable) {
@@ -457,9 +362,6 @@ public class OrderServiceImpl implements OrderService {
                 .findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
 
-//        if (order.getStatus() == OrderStatus.CANCELLED) {
-//            return mapToResponse(order);
-//        }
         if (order.getStatus() == OrderStatus.PAYMENT_FAILED) {
             return orderMapper.toResponse(order);
         }

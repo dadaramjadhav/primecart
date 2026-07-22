@@ -11,11 +11,6 @@ import org.springframework.web.bind.annotation.PutMapping;
              configuration = OrderClientCredentialsFeignConfig.class)
 public interface OrderClient {
 
-    @PutMapping("/api/orders/{orderId}/confirm")
-    void confirmOrder(
-            @PathVariable
-            Long orderId);
-
     @PutMapping("/api/orders/{orderId}/payment-success")
     OrderResponse paymentSuccess(
             @PathVariable

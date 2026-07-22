@@ -6,9 +6,11 @@ import com.primecart.entity.CustomerProfile;
 import com.primecart.repository.CustomerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -18,14 +20,15 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     private final CustomerProfileRepository repository;
 
     @Override
-    @Transactional
-    public CustomerProfileResponse getOrCreateProfile(Jwt jwt) {
+    @Transactional(readOnly = true)
+    public CustomerProfileResponse getProfile(Jwt jwt) {
 
         CustomerProfile profile = repository
                 .findByKeycloakUserId(jwt.getSubject())
-                .orElseGet(() -> createProfile(jwt));
-
-        synchronizeIdentityClaims(profile, jwt);
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Customer profile not found"
+                ));
 
         return toResponse(profile);
     }
@@ -38,9 +41,8 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                 .findByKeycloakUserId(jwt.getSubject())
                 .orElseGet(() -> createProfile(jwt));
 
-        synchronizeIdentityClaims(profile, jwt);
+        synchronizeKeycloakIdentity(profile, jwt);
         profile.setPhone(request.phone());
-        profile.setEmail(request.email());
         profile.setFirstName(request.firstName());
         profile.setLastName(request.lastName());
         log.info("Updating customer profile. profileId={}", profile.getId());
@@ -53,7 +55,11 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
         CustomerProfile profile = new CustomerProfile();
 
         profile.setKeycloakUserId(jwt.getSubject());
-        synchronizeIdentityClaims(profile, jwt);
+        synchronizeKeycloakIdentity(profile, jwt);
+
+        // Seed customer-owned fields from Keycloak only during creation.
+        profile.setFirstName(jwt.getClaimAsString("given_name"));
+        profile.setLastName(jwt.getClaimAsString("family_name"));
 
         CustomerProfile savedProfile = repository.save(profile);
         log.info("Customer profile created. profileId={}", savedProfile.getId());
@@ -61,15 +67,11 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
         return savedProfile;
     }
 
-    private void synchronizeIdentityClaims(CustomerProfile profile, Jwt jwt) {
+    private void synchronizeKeycloakIdentity(CustomerProfile profile, Jwt jwt) {
 
         profile.setUsername(jwt.getClaimAsString("preferred_username"));
 
         profile.setEmail(jwt.getClaimAsString("email"));
-
-        profile.setFirstName(jwt.getClaimAsString("given_name"));
-
-        profile.setLastName(jwt.getClaimAsString("family_name"));
     }
 
     private CustomerProfileResponse toResponse(CustomerProfile profile) {

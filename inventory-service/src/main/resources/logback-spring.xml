@@ -35,48 +35,9 @@
         </encoder>
     </appender>
 
-    <!--    <appender name="JSON_FILE"-->
-    <!--              class="ch.qos.logback.core.rolling.RollingFileAppender">-->
-
-    <!--        <file>/Users/dadaramjadhav/primecart/logs/inventory-service.json</file>-->
-
-    <!--        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">-->
-
-    <!--            <fileNamePattern>-->
-    <!--                /Users/dadaramjadhav/primecart/logs/archive/inventory-service-%d{yyyy-MM-dd}.%i.json.gz-->
-    <!--            </fileNamePattern>-->
-
-    <!--            <maxFileSize>50MB</maxFileSize>-->
-    <!--            <maxHistory>7</maxHistory>-->
-    <!--            <totalSizeCap>500MB</totalSizeCap>-->
-    <!--        </rollingPolicy>-->
-
-    <!--        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">-->
-    <!--            <providers>-->
-    <!--                <timestamp/>-->
-    <!--                <logLevel/>-->
-    <!--                <loggerName/>-->
-    <!--                <threadName/>-->
-    <!--                <message/>-->
-    <!--                <arguments/>-->
-    <!--                <stackTrace/>-->
-    <!--                <mdc/>-->
-
-    <!--                <pattern>-->
-    <!--                    <pattern>-->
-    <!--                        {-->
-    <!--                        "service": "${APP_NAME}",-->
-    <!--                        "environment": "local"-->
-    <!--                        }-->
-    <!--                    </pattern>-->
-    <!--                </pattern>-->
-    <!--            </providers>-->
-    <!--        </encoder>-->
-    <!--    </appender>-->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="LOGSTASH"/>
-        <!--        <appender-ref ref="JSON_FILE"/>-->
     </root>
 
 </configuration>

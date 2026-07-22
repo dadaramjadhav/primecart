@@ -6,7 +6,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 public interface CustomerProfileService {
 
-    CustomerProfileResponse getOrCreateProfile(Jwt jwt);
+    CustomerProfileResponse getProfile(Jwt jwt);
 
     CustomerProfileResponse updateProfile(Jwt jwt, UpdateCustomerProfileRequest request);
 }

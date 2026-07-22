@@ -21,7 +21,7 @@ public class CustomerProfileController {
             @AuthenticationPrincipal
             Jwt jwt) {
 
-        return customerProfileService.getOrCreateProfile(jwt);
+        return customerProfileService.getProfile(jwt);
     }
 
     @PutMapping("/me")

@@ -59,7 +59,7 @@ public class ProductController {
         log.info("PUT /api/products/{} - Product updated successfully", id);
 
         // Count only successful product update
-        productMetrics.incrementProductUpdated(id);
+        productMetrics.incrementProductUpdated();
 
         return ResponseEntity.ok(response);
     }
@@ -75,7 +75,7 @@ public class ProductController {
         log.info("GET /api/products/{} - Product retrieved successfully", id);
 
         // Count only when the product was found successfully
-        productMetrics.incrementProductView(id);
+        productMetrics.incrementProductView();
 
         return ResponseEntity.ok(response);
     }
@@ -101,7 +101,7 @@ public class ProductController {
 
         productService.deleteProduct(id);
         log.info("DELETE /api/products/{} - Product deleted successfully", id);
-        productMetrics.incrementProductDeleted(id);
+        productMetrics.incrementProductDeleted();
 
         return ResponseEntity
                 .noContent()

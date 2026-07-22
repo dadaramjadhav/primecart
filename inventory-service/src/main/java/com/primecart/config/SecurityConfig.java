@@ -39,7 +39,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/actuator", "/actuator/metrics/**", "/actuator/caches/**")
                         .hasRole("ACTUATOR_ADMIN")
-                        
+
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**")
                         .hasRole("INVENTORY_READ")
 
@@ -63,14 +63,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/inventory/confirm")
                         .hasRole("INVENTORY_CONFIRM")
 
-//                        .requestMatchers(HttpMethod.POST, "/api/inventory/**")
-//                        .hasRole("ADMIN")
-//
-//                        .requestMatchers(HttpMethod.PUT, "/api/inventory/**")
-//                        .hasRole("ADMIN")
-//
-//                        .requestMatchers(HttpMethod.DELETE, "/api/inventory/**")
-//                        .hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
 

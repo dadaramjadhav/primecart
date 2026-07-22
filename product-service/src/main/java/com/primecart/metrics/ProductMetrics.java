@@ -51,11 +51,11 @@ public class ProductMetrics {
         productCreatedCounter.increment();
     }
 
-    public void incrementProductUpdated(Long productId) {
+    public void incrementProductUpdated() {
         productUpdatedCounter.increment();
     }
 
-    public void incrementProductView(Long productId) {
+    public void incrementProductView() {
         productViewCounter.increment();
     }
 
@@ -67,7 +67,7 @@ public class ProductMetrics {
         productNotFoundCounter.increment();
     }
 
-    public void incrementProductDeleted(Long productId) {
+    public void incrementProductDeleted() {
         productDeletedCounter.increment();
     }
 }

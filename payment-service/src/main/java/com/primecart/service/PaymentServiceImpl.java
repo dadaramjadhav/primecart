@@ -10,8 +10,6 @@ import com.primecart.mapper.PaymentMapper;
 import com.primecart.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,25 +24,15 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final OrderClient orderClient;
 
-    private String getCurrentUserId() {
-
-        Jwt jwt = (Jwt) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-
-        return jwt.getSubject();
-    }
-
     @PreAuthorize("hasRole('PAYMENT_CREATE')")
     @Override
-    public PaymentResponse createPayment(CreatePaymentRequest request) {
+    public PaymentResponse createPayment(CreatePaymentRequest request, String currentUserId) {
 
         Payment payment = Payment
                 .builder()
                 .paymentNumber(generatePaymentNumber())
                 .orderId(request.getOrderId())
-                .customerId(getCurrentUserId())
+                .customerId(currentUserId)
                 .amount(request.getAmount())
                 .method(request.getMethod())
                 .status(PaymentStatus.PENDING)
@@ -56,36 +44,30 @@ public class PaymentServiceImpl implements PaymentService {
     @PreAuthorize("hasRole('PAYMENT_READ')")
     @Override
     @Transactional(readOnly = true)
-    public PaymentResponse getPayment(Long id) {
+    public PaymentResponse getPayment(Long id, String currentUserId, boolean admin) {
 
-        Payment payment = paymentRepository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
-        validatePaymentOwner(payment);
+        Payment payment = getPaymentEntity(id);
+        validatePaymentOwner(payment, currentUserId, admin);
         return paymentMapper.toResponse(payment);
     }
 
     @PreAuthorize("hasRole('PAYMENT_READ')")
     @Override
     @Transactional(readOnly = true)
-    public PaymentResponse getPaymentByOrder(Long orderId) {
+    public PaymentResponse getPaymentByOrder(Long orderId, String currentUserId, boolean admin) {
 
-        Payment payment = paymentRepository
-                .findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        Payment payment = getPaymentByOrderEntity(orderId);
 
-        validatePaymentOwner(payment);
+        validatePaymentOwner(payment, currentUserId, admin);
         return paymentMapper.toResponse(payment);
     }
 
     @PreAuthorize("hasRole('PAYMENT_SUCCESS')")
     @Override
-    public PaymentResponse markSuccess(Long id) {
+    public PaymentResponse markSuccess(Long id, String currentUserId, boolean admin) {
 
-        Payment payment = paymentRepository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
-        validatePaymentOwner(payment);
+        Payment payment = getPaymentEntity(id);
+        validatePaymentOwner(payment, currentUserId, admin);
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new IllegalStateException("Only pending payments can be marked successful");
         }
@@ -94,38 +76,32 @@ public class PaymentServiceImpl implements PaymentService {
                                          .randomUUID()
                                          .toString());
 
-        Payment saved = paymentRepository.save(payment);
         orderClient.paymentSuccess(payment.getOrderId());
-        return paymentMapper.toResponse(saved);
+        return paymentMapper.toResponse(payment);
     }
 
     @PreAuthorize("hasRole('PAYMENT_FAIL')")
     @Override
-    public PaymentResponse markFailed(Long id) {
+    public PaymentResponse markFailed(Long id, String currentUserId, boolean admin) {
 
-        Payment payment = paymentRepository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
-        validatePaymentOwner(payment);
+        Payment payment = getPaymentEntity(id);
+        validatePaymentOwner(payment, currentUserId, admin);
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new IllegalStateException("Only pending payments can be marked failed");
         }
 
         payment.setStatus(PaymentStatus.FAILED);
-        Payment saved = paymentRepository.save(payment);
         orderClient.paymentFailed(payment.getOrderId());
-        return paymentMapper.toResponse(saved);
+        return paymentMapper.toResponse(payment);
     }
 
     @Override
     @PreAuthorize("hasRole('PAYMENT_RETRY')")
-    public PaymentResponse retryPayment(Long id) {
+    public PaymentResponse retryPayment(Long id, String currentUserId, boolean admin) {
 
-        Payment payment = paymentRepository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        Payment payment = getPaymentEntity(id);
 
-        validatePaymentOwner(payment);
+        validatePaymentOwner(payment, currentUserId, admin);
 
         if (payment.getStatus() != PaymentStatus.FAILED) {
             throw new IllegalStateException("Only failed payments can be retried");
@@ -136,7 +112,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setTransactionId(null);
 
-        return paymentMapper.toResponse(paymentRepository.save(payment));
+        return paymentMapper.toResponse(payment);
     }
 
     private String generatePaymentNumber() {
@@ -144,31 +120,25 @@ public class PaymentServiceImpl implements PaymentService {
         return "PAY-" + System.currentTimeMillis();
     }
 
-    private String generateTransactionId() {
+    private Payment getPaymentEntity(Long id) {
 
-        return UUID
-                .randomUUID()
-                .toString();
+        return paymentRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
     }
 
-    private void validatePaymentOwner(Payment payment) {
+    private Payment getPaymentByOrderEntity(Long orderId) {
 
-        var authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
+        return paymentRepository
+                .findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+    }
 
-        boolean admin = authentication
-                .getAuthorities()
-                .stream()
-                .anyMatch(authority -> authority
-                        .getAuthority()
-                        .equals("ROLE_ADMIN"));
+    private void validatePaymentOwner(Payment payment, String currentUserId, boolean admin) {
 
         if (admin) {
             return;
         }
-
-        String currentUserId = getCurrentUserId();
 
         if (!payment
                 .getCustomerId()
