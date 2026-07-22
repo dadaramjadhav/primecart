@@ -13,6 +13,6 @@ COPY --chown=primecart:primecart target/*.jar app.jar
 
 USER primecart
 
-EXPOSE 8181
+EXPOSE 9191
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

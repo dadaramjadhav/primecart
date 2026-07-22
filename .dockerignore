@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+target
+node_modules
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+docs
+README.md

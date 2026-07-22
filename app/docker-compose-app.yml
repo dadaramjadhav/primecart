@@ -72,8 +72,8 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     networks:
-      - microservices-network
+      - primecart-nw
 
 networks:
-  microservices-network:
+  primecart-nw:
     external: true
