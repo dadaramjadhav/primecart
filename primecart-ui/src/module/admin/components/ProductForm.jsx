@@ -6,19 +6,20 @@ import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Textarea } from "@/shared/ui/textarea"
 import useAdminProductOptions from "../hooks/useAdminProductOptions"
-import { isSafeHttpUrl } from "@/shared/utils/urlValidation"
+import { useState } from "react"
+import { createProductImageUpload, uploadProductImage } from "../services/adminProductService"
 
 const emptyProduct = {
   name: "",
   description: "",
   price: "",
-  imageUrl: "https://picsum.photos/400?random=28",
+  imageUrl: "",
   sku: "",
   stock: 0,
   active: true,
   categoryId: "",
   brandId: "",
-}
+} 
 
 function ProductForm({ initialValues = emptyProduct, onSubmit, submitLabel, isSaving = false }) {
   const {
@@ -28,13 +29,50 @@ function ProductForm({ initialValues = emptyProduct, onSubmit, submitLabel, isSa
   } = useForm({
     values: initialValues,
   })
+  const [imageFile, setImageFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState("")
+
   const { data: options, isPending: areOptionsLoading, isError: areOptionsUnavailable } = useAdminProductOptions()
   const categories = options?.categories ?? []
   const brands = options?.brands ?? []
-  const submitting = isSubmitting || isSaving
+  const submitting = isSubmitting || isSaving || isUploading
+  async function handleProductSubmit(productData) {
+    try {
+      setUploadError("")
 
+      let imageUrl = initialValues.imageUrl
+
+      if (imageFile) {
+        setIsUploading(true)
+
+        const upload = await createProductImageUpload(imageFile)
+
+        await uploadProductImage(upload.uploadUrl, imageFile)
+
+        imageUrl = `https://primecart-products.s3.eu-north-1.amazonaws.com/${upload.objectKey}`
+      }
+
+      if (!imageUrl) {
+        setUploadError("Please select a product image.")
+        return
+      }
+
+      await onSubmit({
+        ...productData,
+        imageUrl,
+      })
+    } catch (error) {
+      setUploadError(error.response?.data?.message ?? "Unable to upload the image.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6 rounded-xl border bg-card p-6" noValidate>
+    <form
+      onSubmit={handleSubmit(handleProductSubmit)}
+      className="max-w-2xl space-y-6 rounded-xl border bg-card p-6"
+      noValidate>
       <div className="space-y-2">
         <Label htmlFor="name">Product name</Label>
 
@@ -95,22 +133,25 @@ function ProductForm({ initialValues = emptyProduct, onSubmit, submitLabel, isSa
         {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="imageUrl">Image URL</Label>
+        <Label htmlFor="productImage">Product image</Label>
 
         <Input
-          id="imageUrl"
-          type="url"
-          placeholder="https://example.com/product-image.jpg"
-          aria-invalid={Boolean(errors.imageUrl)}
-          {...register("imageUrl", {
-            required: "Product image URL is required.",
-
-            validate: (value) => isSafeHttpUrl(value) || "Enter a valid HTTP or HTTPS image URL.",
-          })}
+          id="productImage"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => {
+            setImageFile(event.target.files?.[0] ?? null)
+            setUploadError("")
+          }}
         />
 
-        {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
+        {initialValues.imageUrl && (
+          <img src={initialValues.imageUrl} alt="Current product" className="h-32 w-32 rounded-lg object-cover" />
+        )}
+
+        {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
       </div>
+
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="price">Price</Label>
@@ -223,8 +264,8 @@ function ProductForm({ initialValues = emptyProduct, onSubmit, submitLabel, isSa
         <Label htmlFor="active">Active product</Label>
       </div>
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={submitting || areOptionsLoading || areOptionsUnavailable}>
-          {submitting ? "Saving..." : submitLabel}
+        <Button type="submit" disabled={submitting}>
+          {isUploading ? "Uploading image..." : submitting ? "Saving..." : submitLabel}
         </Button>
         <Link
           to="/admin/products"

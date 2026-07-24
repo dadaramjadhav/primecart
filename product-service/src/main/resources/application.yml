@@ -8,3 +8,14 @@ spring:
   cloud:
     config:
       label: main
+
+primecart:
+  storage:
+    endpoint: ""
+    region: eu-north-1
+    bucket: primecart-products
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    path-style-access: false
+    presigned-url-duration: 5m
+    max-file-size: 5MB

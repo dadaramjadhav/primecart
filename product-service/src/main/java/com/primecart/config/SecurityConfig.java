@@ -34,7 +34,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/actuator", "/actuator/metrics/**", "/actuator/caches/**")
                         .hasRole("ACTUATOR_ADMIN")
-                        
+
                         .requestMatchers(HttpMethod.GET, "/api/categories/**")
                         .hasRole("CATEGORY_READ")
 
@@ -43,19 +43,21 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/products/**")
                         .hasRole("PRODUCT_READ")
-//                        .hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/products/**")
                         .hasRole("PRODUCT_CREATE")
-//                        .hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.PUT, "/api/products/**")
                         .hasRole("PRODUCT_UPDATE")
-//                        .hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**")
                         .hasRole("PRODUCT_DELETE")
-//                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/product-images/upload-url")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/product-images/upload")
+                        .hasRole("ADMIN")
 
                         .anyRequest()
                         .authenticated())
