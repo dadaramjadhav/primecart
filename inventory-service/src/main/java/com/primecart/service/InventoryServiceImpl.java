@@ -5,6 +5,9 @@ import com.primecart.dto.request.ReserveStockRequest;
 import com.primecart.dto.request.UpdateStockRequest;
 import com.primecart.dto.response.InventoryResponse;
 import com.primecart.entity.Inventory;
+import com.primecart.exception.DuplicateResourceException;
+import com.primecart.exception.InsufficientReservedStockException;
+import com.primecart.exception.InsufficientStockException;
 import com.primecart.exception.InventoryNotFoundException;
 import com.primecart.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +55,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (inventory.getAvailableQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException("Insufficient stock");
+            throw new InsufficientStockException(productId, inventory.getAvailableQuantity(), request.getQuantity());
         }
 
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() - request.getQuantity());
@@ -69,8 +72,7 @@ public class InventoryServiceImpl implements InventoryService {
         Inventory inventory = getInventoryEntity(request.getProductId());
 
         if (inventory.getAvailableQuantity() < request.getQuantity()) {
-
-            throw new RuntimeException("Not enough stock available");
+            throw new InsufficientStockException(request.getProductId(), inventory.getAvailableQuantity(), request.getQuantity());
         }
 
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() - request.getQuantity());
@@ -88,7 +90,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (inventory.getReservedQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException("Invalid release quantity");
+            throw new InsufficientReservedStockException(request.getProductId(), inventory.getReservedQuantity(), request.getQuantity());
         }
 
         inventory.setReservedQuantity(inventory.getReservedQuantity() - request.getQuantity());
@@ -105,7 +107,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (inventoryRepository.existsByProductId(request.getProductId())) {
 
-            throw new RuntimeException("Inventory already exists for product " + request.getProductId());
+            throw new DuplicateResourceException("Inventory already exists for product " + request.getProductId());
         }
 
         Inventory inventory = Inventory
@@ -129,11 +131,11 @@ public class InventoryServiceImpl implements InventoryService {
 
         Inventory inventory = inventoryRepository
                 .findByProductId(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Inventory not found"));
+                .orElseThrow(() -> new InventoryNotFoundException("Inventory not found for product " + request.getProductId()));
 
         if (inventory.getReservedQuantity() < request.getQuantity()) {
 
-            throw new RuntimeException("Not enough reserved stock");
+            throw new InsufficientReservedStockException(request.getProductId(), inventory.getReservedQuantity(), request.getQuantity());
         }
 
         // only remove reservation

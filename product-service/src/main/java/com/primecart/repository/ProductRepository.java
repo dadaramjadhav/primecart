@@ -18,11 +18,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByActive(Boolean active);
 
     // Used by filtered + paginated endpoint
-    Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
+    Page<Product> findByCategoryId(
+            Long categoryId,
+            Pageable pageable
+    );
 
-    Page<Product> findByBrandId(Long brandId, Pageable pageable);
+    Page<Product> findByBrandId(
+            Long brandId,
+            Pageable pageable
+    );
 
-    Page<Product> findByActive(Boolean active, Pageable pageable);
+    Page<Product> findByActive(
+            Boolean active,
+            Pageable pageable
+    );
 
-    Page<Product> findByNameContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<Product> findByNameContainingIgnoreCase(
+            String keyword,
+            Pageable pageable
+    );
+
+    boolean existsBySku(String sku);
 }

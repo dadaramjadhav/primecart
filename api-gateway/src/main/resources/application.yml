@@ -4,6 +4,12 @@ server:
     certificate: file:/Users/dadaramjadhav/primecart/infra/tls/localhost-cert.pem
     certificate-private-key: file:/Users/dadaramjadhav/primecart/infra/tls/localhost-key.pem
 
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
 spring:
   application:
     name: api-gateway

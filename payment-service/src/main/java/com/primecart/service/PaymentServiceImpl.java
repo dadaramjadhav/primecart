@@ -5,7 +5,8 @@ import com.primecart.dto.request.CreatePaymentRequest;
 import com.primecart.dto.response.PaymentResponse;
 import com.primecart.entity.Payment;
 import com.primecart.entity.PaymentStatus;
-import com.primecart.exception.ResourceNotFoundException;
+import com.primecart.exception.InvalidPaymentStateException;
+import com.primecart.exception.PaymentNotFoundException;
 import com.primecart.mapper.PaymentMapper;
 import com.primecart.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +70,8 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = getPaymentEntity(id);
         validatePaymentOwner(payment, currentUserId, admin);
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException("Only pending payments can be marked successful");
+            throw new InvalidPaymentStateException(payment.getId(), payment.getStatus(), "mark successful",
+                                                   "Only PENDING payments can be marked successful");
         }
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setTransactionId(UUID
@@ -87,7 +89,8 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = getPaymentEntity(id);
         validatePaymentOwner(payment, currentUserId, admin);
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException("Only pending payments can be marked failed");
+            throw new InvalidPaymentStateException(payment.getId(), payment.getStatus(), "mark failed",
+                                                   "Only PENDING payments can be marked failed");
         }
 
         payment.setStatus(PaymentStatus.FAILED);
@@ -104,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
         validatePaymentOwner(payment, currentUserId, admin);
 
         if (payment.getStatus() != PaymentStatus.FAILED) {
-            throw new IllegalStateException("Only failed payments can be retried");
+            throw new InvalidPaymentStateException(payment.getId(), payment.getStatus(), "retry", "Only FAILED payments can be retried");
         }
 
         orderClient.retryPayment(payment.getOrderId());
@@ -124,14 +127,14 @@ public class PaymentServiceImpl implements PaymentService {
 
         return paymentRepository
                 .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + id));
     }
 
     private Payment getPaymentByOrderEntity(Long orderId) {
 
         return paymentRepository
                 .findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found for order: " + orderId));
     }
 
     private void validatePaymentOwner(Payment payment, String currentUserId, boolean admin) {
@@ -143,7 +146,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (!payment
                 .getCustomerId()
                 .equals(currentUserId)) {
-            throw new ResourceNotFoundException("Payment not found");
+            throw new PaymentNotFoundException("Payment not found");
         }
     }
 }

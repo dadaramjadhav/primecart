@@ -34,7 +34,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/actuator", "/actuator/metrics/**", "/actuator/caches/**")
                         .hasRole("ACTUATOR_ADMIN")
-                        
+
                         .requestMatchers(HttpMethod.GET, "/api/cart/**")
                         .hasRole("CART_READ")
 
@@ -66,7 +66,8 @@ to use the custom JwtAuthenticationConverter to convert incoming JWTs into authe
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
             String issuerUri,
             @Value("${primecart.security.jwt.audience}")
-            String expectedAudience) {
+            String expectedAudience
+    ) {
 
         NimbusJwtDecoder decoder = NimbusJwtDecoder
                 .withIssuerLocation(issuerUri)

@@ -1,5 +1,6 @@
 package com.primecart.config;
 
+import com.primecart.exception.DownstreamAuthenticationException;
 import feign.RequestInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -34,7 +35,7 @@ public class OrderClientCredentialsFeignConfig {
             OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(request);
 
             if (authorizedClient == null) {
-                throw new IllegalStateException("Unable to obtain payment-service access token");
+                throw new DownstreamAuthenticationException("Unable to authenticate with Order Service");
             }
 
             String serviceAccessToken = authorizedClient

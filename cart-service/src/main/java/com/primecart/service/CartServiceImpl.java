@@ -8,7 +8,10 @@ import com.primecart.dto.response.CartResponse;
 import com.primecart.dto.response.ProductResponse;
 import com.primecart.entity.Cart;
 import com.primecart.entity.CartItem;
-import com.primecart.exception.ResourceNotFoundException;
+import com.primecart.exception.CartItemNotFoundException;
+import com.primecart.exception.CartNotFoundException;
+import com.primecart.exception.CartQuantityExceededException;
+import com.primecart.exception.ProductUnavailableException;
 import com.primecart.repository.CartItemRepository;
 import com.primecart.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ import java.util.List;
 @Transactional
 public class CartServiceImpl implements CartService {
 
+    private static final int MAX_ITEM_QUANTITY = 99;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductClient productClient;
@@ -50,12 +54,16 @@ public class CartServiceImpl implements CartService {
 
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
 
-        return buildCartResponse(cart, cartItems);
+        return buildCartResponse(cart,
+                                 cartItems);
     }
 
     @PreAuthorize("hasRole('CART_ITEM_ADD')")
     @Override
-    public CartResponse addItem(String userId, AddCartItemRequest request) {
+    public CartResponse addItem(
+            String userId,
+            AddCartItemRequest request
+    ) {
 
         // Get existing cart or create a new one
         Cart cart = cartRepository
@@ -67,7 +75,8 @@ public class CartServiceImpl implements CartService {
 
         // Check if the product already exists in the cart
         CartItem cartItem = cartItemRepository
-                .findByCartAndProductId(cart, request.getProductId())
+                .findByCartAndProductId(cart,
+                                        request.getProductId())
                 .orElse(null);
 
         if (cartItem != null) {
@@ -75,6 +84,9 @@ public class CartServiceImpl implements CartService {
             // Increase quantity
             int newQuantity = cartItem.getQuantity() + request.getQuantity();
 
+            if (newQuantity > MAX_ITEM_QUANTITY) {
+                throw new CartQuantityExceededException("Cart item quantity cannot exceed " + MAX_ITEM_QUANTITY);
+            }
             cartItem.setQuantity(newQuantity);
             cartItem.setSubtotal(cartItem
                                          .getPrice()
@@ -99,18 +111,24 @@ public class CartServiceImpl implements CartService {
 
         List<CartItem> items = cartItemRepository.findByCart(cart);
 
-        return buildCartResponse(cart, items);
+        return buildCartResponse(cart,
+                                 items);
     }
 
     @PreAuthorize("hasRole('CART_ITEM_UPDATE')")
     @Override
-    public CartResponse updateItem(String userId, Long cartItemId, UpdateCartItemRequest request) {
+    public CartResponse updateItem(
+            String userId,
+            Long cartItemId,
+            UpdateCartItemRequest request
+    ) {
 
         Cart cart = getCartByUser(userId);
 
         CartItem cartItem = getCartItem(cartItemId);
 
-        validateOwnership(cart, cartItem);
+        validateOwnership(cart,
+                          cartItem);
 
         cartItem.setQuantity(request.getQuantity());
 
@@ -122,18 +140,23 @@ public class CartServiceImpl implements CartService {
 
         List<CartItem> items = cartItemRepository.findByCart(cart);
 
-        return buildCartResponse(cart, items);
+        return buildCartResponse(cart,
+                                 items);
     }
 
     @PreAuthorize("hasRole('CART_ITEM_REMOVE')")
     @Override
-    public void removeItem(String userId, Long cartItemId) {
+    public void removeItem(
+            String userId,
+            Long cartItemId
+    ) {
 
         Cart cart = getCartByUser(userId);
 
         CartItem cartItem = getCartItem(cartItemId);
 
-        validateOwnership(cart, cartItem);
+        validateOwnership(cart,
+                          cartItem);
 
         cartItemRepository.delete(cartItem);
     }
@@ -161,7 +184,10 @@ public class CartServiceImpl implements CartService {
         return cartRepository.save(cart);
     }
 
-    private CartResponse buildCartResponse(Cart cart, List<CartItem> cartItems) {
+    private CartResponse buildCartResponse(
+            Cart cart,
+            List<CartItem> cartItems
+    ) {
 
         List<CartItemResponse> items = new ArrayList<>();
 
@@ -200,17 +226,20 @@ public class CartServiceImpl implements CartService {
 
         return cartRepository
                 .findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found."));
+                .orElseThrow(() -> new CartNotFoundException("Cart not found for authenticated customer"));
     }
 
     private CartItem getCartItem(Long cartItemId) {
 
         return cartItemRepository
                 .findById(cartItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found."));
+                .orElseThrow(() -> new CartItemNotFoundException("Cart item not found"));
     }
 
-    private void validateOwnership(Cart cart, CartItem cartItem) {
+    private void validateOwnership(
+            Cart cart,
+            CartItem cartItem
+    ) {
 
         if (!cart
                 .getId()
@@ -218,7 +247,7 @@ public class CartServiceImpl implements CartService {
                                 .getCart()
                                 .getId())) {
 
-            throw new ResourceNotFoundException("Cart item does not belong to authenticated user.");
+            throw new CartItemNotFoundException("Cart item not found");
         }
     }
 
@@ -228,7 +257,7 @@ public class CartServiceImpl implements CartService {
 
         if (product == null || Boolean.FALSE.equals(product.getActive())) {
 
-            throw new ResourceNotFoundException("Product is not available.");
+            throw new ProductUnavailableException("Product is not currently available");
         }
 
         return product;

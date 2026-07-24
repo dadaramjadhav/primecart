@@ -7,6 +7,7 @@ import com.primecart.dto.response.ProductResponse;
 import com.primecart.entity.Brand;
 import com.primecart.entity.Category;
 import com.primecart.entity.Product;
+import com.primecart.exception.DuplicateResourceException;
 import com.primecart.exception.ResourceNotFoundException;
 import com.primecart.mapper.ProductMapper;
 import com.primecart.messaging.events.ProductCreatedEvent;
@@ -25,9 +26,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,7 +41,12 @@ import java.util.UUID;
 public class ProductServiceImpl implements ProductService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
-
+    private static final List<String> ALLOWED_SORT_FIELDS = List.of("id",
+                                                                    "name",
+                                                                    "price",
+                                                                    "stock",
+                                                                    "createdAt",
+                                                                    "updatedAt");
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
@@ -53,21 +61,33 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
 
-        log.info("Creating product: {}", request.name());
+        log.info("Creating product: {}",
+                 request.name());
 
+        if (productRepository.existsBySku(request.sku())) {
+            throw new DuplicateResourceException("Product already exists with SKU: " + request.sku());
+        }
         Category category = getCategory(request.categoryId());
         Brand brand = getBrand(request.brandId());
 
-        Product product = productMapper.toEntity(request, category, brand);
+        Product product = productMapper.toEntity(request,
+                                                 category,
+                                                 brand);
 
         Product savedProduct = productRepository.save(product);
 
-        ProductCreatedEvent event = new ProductCreatedEvent(UUID.randomUUID(), "PRODUCT_CREATED", savedProduct.getId(),
-                                                            savedProduct.getSku(), savedProduct.getName(), savedProduct.getPrice(),
-                                                            savedProduct.getStock(), Instant.now());
+        ProductCreatedEvent event = new ProductCreatedEvent(UUID.randomUUID(),
+                                                            "PRODUCT_CREATED",
+                                                            savedProduct.getId(),
+                                                            savedProduct.getSku(),
+                                                            savedProduct.getName(),
+                                                            savedProduct.getPrice(),
+                                                            savedProduct.getStock(),
+                                                            Instant.now());
         applicationEventPublisher.publishEvent(event);
 
-        log.info("Product created with id: {}", savedProduct.getId());
+        log.info("Product created with id: {}",
+                 savedProduct.getId());
 
         return productMapper.toResponse(savedProduct);
     }
@@ -101,17 +121,25 @@ public class ProductServiceImpl implements ProductService {
                                   key = "#id"), @CacheEvict(value = CacheNames.ALL_PRODUCTS,
                                                             allEntries = true)})
     @Override
-    public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
+    public ProductResponse updateProduct(
+            Long id,
+            UpdateProductRequest request
+    ) {
 
-        log.info("Updating product with id: {}", id);
+        log.info("Updating product with id: {}",
+                 id);
 
         Product product = getProduct(id);
         Category category = getCategory(request.categoryId());
         Brand brand = getBrand(request.brandId());
 
-        productMapper.updateEntity(product, request, category, brand);
+        productMapper.updateEntity(product,
+                                   request,
+                                   category,
+                                   brand);
 
-        log.info("Product updated successfully with id: {}", product.getId());
+        log.info("Product updated successfully with id: {}",
+                 product.getId());
 
         return productMapper.toResponse(product);
     }
@@ -121,43 +149,64 @@ public class ProductServiceImpl implements ProductService {
     @Caching(evict = {@CacheEvict(value = CacheNames.PRODUCTS,
                                   key = "#id"), @CacheEvict(value = CacheNames.ALL_PRODUCTS,
                                                             allEntries = true)})
+
     @Override
     public void deleteProduct(Long id) {
 
-        log.info("Deleting product with id: {}", id);
+        log.info("Deleting product with id: {}",
+                 id);
 
         Product product = getProduct(id);
 
         productRepository.delete(product);
 
-        log.info("Product deleted successfully with id: {}", id);
+        log.info("Product deleted successfully with id: {}",
+                 id);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('PRODUCT_READ')")
     @Cacheable(value = CacheNames.ALL_PRODUCTS)
     @Override
-    public Page<ProductResponse> getProducts(Long category, Long brand, Boolean active, String keyword, int page, int size, String sortBy,
-                                             String direction) {
+    public Page<ProductResponse> getProducts(
+            Long category,
+            Long brand,
+            Boolean active,
+            String keyword,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
 
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                              "Unsupported sort field: " + sortBy);
+        }
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort
                                                          .by(sortBy)
                                                          .descending() : Sort
                                                                          .by(sortBy)
                                                                          .ascending();
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page,
+                                           size,
+                                           sort);
 
         Page<Product> productPage;
 
         if (category != null) {
-            productPage = productRepository.findByCategoryId(category, pageable);
+            productPage = productRepository.findByCategoryId(category,
+                                                             pageable);
         } else if (brand != null) {
-            productPage = productRepository.findByBrandId(brand, pageable);
+            productPage = productRepository.findByBrandId(brand,
+                                                          pageable);
         } else if (active != null) {
-            productPage = productRepository.findByActive(active, pageable);
+            productPage = productRepository.findByActive(active,
+                                                         pageable);
         } else if (keyword != null && !keyword.isBlank()) {
-            productPage = productRepository.findByNameContainingIgnoreCase(keyword, pageable);
+            productPage = productRepository.findByNameContainingIgnoreCase(keyword,
+                                                                           pageable);
         } else {
             productPage = productRepository.findAll(pageable);
         }
@@ -170,7 +219,8 @@ public class ProductServiceImpl implements ProductService {
         return categoryRepository
                 .findById(id)
                 .orElseThrow(() -> {
-                    log.warn("Category not found with id: {}", id);
+                    log.warn("Category not found with id: {}",
+                             id);
                     return new ResourceNotFoundException("Category not found with id: " + id);
                 });
     }
@@ -180,7 +230,8 @@ public class ProductServiceImpl implements ProductService {
         return brandRepository
                 .findById(id)
                 .orElseThrow(() -> {
-                    log.warn("Brand not found with id: {}", id);
+                    log.warn("Brand not found with id: {}",
+                             id);
                     return new ResourceNotFoundException("Brand not found with id: " + id);
                 });
     }
@@ -190,7 +241,8 @@ public class ProductServiceImpl implements ProductService {
         return productRepository
                 .findById(id)
                 .orElseThrow(() -> {
-                    log.warn("Product not found with id: {}", id);
+                    log.warn("Product not found with id: {}",
+                             id);
                     productMetrics.incrementProductNotFound();
                     return new ResourceNotFoundException("Product not found with id: " + id);
                 });

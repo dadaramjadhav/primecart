@@ -10,6 +10,8 @@ import com.primecart.entity.Order;
 import com.primecart.entity.OrderItem;
 import com.primecart.entity.OrderStatus;
 import com.primecart.exception.CartEmptyException;
+import com.primecart.exception.InvalidOrderStateException;
+import com.primecart.exception.OrderAccessDeniedException;
 import com.primecart.exception.OrderNotFoundException;
 import com.primecart.mapper.OrderMapper;
 import com.primecart.messaging.events.OrderCreatedEvent;
@@ -251,18 +253,18 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository
                 .findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
 
         // Verify owner
         if (!order
                 .getCustomerId()
                 .equals(getCurrentUserId())) {
-            throw new RuntimeException("You are not authorized to cancel this order");
+            throw new OrderAccessDeniedException("You do not have permission to cancel this order");
         }
 
         // Only CREATED orders can be cancelled
         if (order.getStatus() != OrderStatus.CREATED) {
-            throw new RuntimeException("Only CREATED orders can be cancelled");
+            throw new InvalidOrderStateException(orderId, order.getStatus(), "cancel", "Only CREATED orders can be cancelled");
         }
 
         // Release reserved inventory
@@ -291,18 +293,18 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository
                 .findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
 
         // Verify owner
         if (!order
                 .getCustomerId()
                 .equals(getCurrentUserId())) {
-            throw new RuntimeException("You are not authorized to confirm this order");
+            throw new OrderAccessDeniedException("You do not have permission to confirm this order");
         }
 
         // Only CREATED orders can be confirmed
         if (order.getStatus() != OrderStatus.CREATED) {
-            throw new RuntimeException("Only CREATED orders can be confirmed");
+            throw new InvalidOrderStateException(orderId, order.getStatus(), "confirm", "Only CREATED orders can be confirmed");
         }
 
         // Confirm stock for every item
@@ -360,14 +362,15 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository
                 .findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
 
         if (order.getStatus() == OrderStatus.PAYMENT_FAILED) {
             return orderMapper.toResponse(order);
         }
         if (order.getStatus() != OrderStatus.PAYMENT_PENDING && order.getStatus() != OrderStatus.CREATED) {
 
-            throw new IllegalStateException("Payment cannot fail for order in status: " + order.getStatus());
+            throw new InvalidOrderStateException(orderId, order.getStatus(), "mark payment failed",
+                                                 "Payment cannot fail for order in status: " + order.getStatus());
         }
         // Release inventory
         for (OrderItem item : order.getItems()) {
@@ -390,11 +393,12 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository
                 .findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
 
         if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.PAYMENT_PENDING) {
 
-            throw new RuntimeException("Invalid order status");
+            throw new InvalidOrderStateException(orderId, order.getStatus(), "mark payment successful",
+                                                 "Payment cannot succeed for order in status: " + order.getStatus());
         }
 
         // confirm inventory
@@ -417,12 +421,13 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository
                 .findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
 
 //        validateOrderAccess(order);
 
         if (order.getStatus() != OrderStatus.PAYMENT_FAILED) {
-            throw new IllegalStateException("Only payment-failed orders can retry payment");
+            throw new InvalidOrderStateException(orderId, order.getStatus(), "retry payment",
+                                                 "Only PAYMENT_FAILED orders can retry payment");
         }
 
         for (OrderItem item : order.getItems()) {

@@ -3,14 +3,13 @@ package com.primecart.service;
 import com.primecart.dto.request.UpdateCustomerProfileRequest;
 import com.primecart.dto.response.CustomerProfileResponse;
 import com.primecart.entity.CustomerProfile;
+import com.primecart.exception.CustomerProfileNotFoundException;
 import com.primecart.repository.CustomerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -25,10 +24,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
         CustomerProfile profile = repository
                 .findByKeycloakUserId(jwt.getSubject())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Customer profile not found"
-                ));
+                .orElseThrow(() -> new CustomerProfileNotFoundException("Customer profile not found"));
 
         return toResponse(profile);
     }

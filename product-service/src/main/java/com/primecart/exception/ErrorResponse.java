@@ -1,24 +1,17 @@
 package com.primecart.exception;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
-@Data
 @Builder
-@AllArgsConstructor
-public class ErrorResponse {
-
-    private LocalDateTime timestamp;
-
-    private int status;
-
-    private String error;
-
-    private String message;
-
-    private List<String> details;
+public record ErrorResponse(Instant timestamp,
+                            int status,
+                            String error,
+                            String code,
+                            String message,
+                            String path,
+                            String traceId,
+                            List<String> details) {
 }

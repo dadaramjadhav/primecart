@@ -1,6 +1,12 @@
 server:
   port: 9191
 
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
 spring:
   application:
     name: spring-boot-admin-server
