@@ -1,539 +1,664 @@
-Step 1: Create the service
-Create:
-primecart/customer-service
-Use:
-Group: com.primecart
-Artifact: customer-service
-Java: 17
-Spring Boot: 3.5.16
-Dependencies:
-<dependencies>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-validation</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.flywaydb</groupId>
-        <artifactId>flyway-core</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.flywaydb</groupId>
-        <artifactId>flyway-mysql</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>com.mysql</groupId>
-        <artifactId>mysql-connector-j</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-
-    <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <optional>true</optional>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <scope>test</scope>
-    </dependency>
-</dependencies>
-Step 2: Add configuration
-Create:
-customer-service/src/main/resources/application.yml
-server:
-  port: 8086
-
-primecart:
-  security:
-    jwt:
-      audience: primecart-api
-
-spring:
-  application:
-    name: customer-service
-
-  datasource:
-    url: jdbc:mysql://localhost:3306/customer_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-    username: root
-    password: ${CUSTOMER_DB_PASSWORD}
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://localhost:8443/realms/primecart
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus,metrics
-
-  endpoint:
-    health:
-      show-details: when-authorized
-Set the password before starting:
-export CUSTOMER_DB_PASSWORD='your-local-database-password'
-Step 3: Create the database migration
-Create:
-customer-service/src/main/resources/db/migration/V1__create_customer_profiles.sql
-CREATE TABLE customer_profiles
-(
-    id                 BIGINT AUTO_INCREMENT PRIMARY KEY,
-    keycloak_user_id   VARCHAR(100) NOT NULL,
-    username           VARCHAR(100),
-    email              VARCHAR(255),
-    first_name         VARCHAR(100),
-    last_name          VARCHAR(100),
-    phone              VARCHAR(30),
-    created_at         TIMESTAMP(6) NOT NULL,
-    updated_at         TIMESTAMP(6) NOT NULL,
-
-    CONSTRAINT uk_customer_profiles_keycloak_user_id
-        UNIQUE (keycloak_user_id)
-);
-The keycloak_user_id stores the JWT sub claim.
-Step 4: Create the entity
-Create:
-customer-service/src/main/java/com/primecart/entity/CustomerProfile.java
-package com.primecart.entity;
-
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@Entity
-@Table(
-    name = "customer_profiles",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_customer_profiles_keycloak_user_id",
-        columnNames = "keycloak_user_id"
-    )
+1. Create the dashboard
+In Grafana:
+Dashboards
+→ New
+→ New dashboard
+→ Add visualization
+→ Prometheus
+Save it as:
+Product Service Performance
+Set:
+Time range: Last 15 minutes
+Auto refresh: 5s during testing, 30s normally
+2. Create the method variable
+Open:
+Dashboard settings
+→ Variables
+→ Add variable
+Configure:
+Name: method
+Label: HTTP Method
+Type: Query
+Data source: Prometheus
+Query:
+label_values(
+  http_server_requests_seconds_count{job="product-service"},
+  method
 )
-public class CustomerProfile {
+If your Grafana uses the structured variable editor, select:
+Query type: Label values
+Label: method
+Metric:
+http_server_requests_seconds_count
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "keycloak_user_id", nullable = false, length = 100)
-    private String keycloakUserId;
-
-    @Column(length = 100)
-    private String username;
-
-    @Column(length = 255)
-    private String email;
-
-    @Column(name = "first_name", length = 100)
-    private String firstName;
-
-    @Column(name = "last_name", length = 100)
-    private String lastName;
-
-    @Column(length = 30)
-    private String phone;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-    }
-
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-}
-Do not store passwords or Keycloak access tokens in this table.
-Step 5: Create the repository
-Create:
-customer-service/src/main/java/com/primecart/repository/CustomerProfileRepository.java
-package com.primecart.repository;
-
-import com.primecart.entity.CustomerProfile;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.Optional;
-
-public interface CustomerProfileRepository
-        extends JpaRepository<CustomerProfile, Long> {
-
-    Optional<CustomerProfile> findByKeycloakUserId(String keycloakUserId);
-}
-Step 6: Create response DTO
-Create:
-customer-service/src/main/java/com/primecart/dto/response/CustomerProfileResponse.java
-package com.primecart.dto.response;
-
-import java.time.LocalDateTime;
-
-public record CustomerProfileResponse(
-    Long id,
-    String keycloakUserId,
-    String username,
-    String email,
-    String firstName,
-    String lastName,
-    String phone,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
-) {
-}
-Step 7: Create update request DTO
-Create:
-customer-service/src/main/java/com/primecart/dto/request/UpdateCustomerProfileRequest.java
-package com.primecart.dto.request;
-
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-
-public record UpdateCustomerProfileRequest(
-
-    @Size(max = 30)
-    @Pattern(
-        regexp = "^[0-9+() -]*$",
-        message = "Phone contains invalid characters"
-    )
-    String phone
-) {
-}
-Only PrimeCart-specific fields should be editable here. Username and email continue to come from Keycloak.
-Step 8: Create the service interface
-Create:
-customer-service/src/main/java/com/primecart/service/CustomerProfileService.java
-package com.primecart.service;
-
-import com.primecart.dto.request.UpdateCustomerProfileRequest;
-import com.primecart.dto.response.CustomerProfileResponse;
-import org.springframework.security.oauth2.jwt.Jwt;
-
-public interface CustomerProfileService {
-
-    CustomerProfileResponse getOrCreateProfile(Jwt jwt);
-
-    CustomerProfileResponse updateProfile(
-        Jwt jwt,
-        UpdateCustomerProfileRequest request
-    );
-}
-Step 9: Implement just-in-time profile creation
-Create:
-customer-service/src/main/java/com/primecart/service/CustomerProfileServiceImpl.java
-package com.primecart.service;
-
-import com.primecart.dto.request.UpdateCustomerProfileRequest;
-import com.primecart.dto.response.CustomerProfileResponse;
-import com.primecart.entity.CustomerProfile;
-import com.primecart.repository.CustomerProfileRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-@Service
-@RequiredArgsConstructor
-public class CustomerProfileServiceImpl
-        implements CustomerProfileService {
-
-    private final CustomerProfileRepository repository;
-
-    @Override
-    @Transactional
-    public CustomerProfileResponse getOrCreateProfile(Jwt jwt) {
-
-        CustomerProfile profile = repository
-            .findByKeycloakUserId(jwt.getSubject())
-            .orElseGet(() -> createProfile(jwt));
-
-        synchronizeIdentityClaims(profile, jwt);
-
-        return toResponse(profile);
-    }
-
-    @Override
-    @Transactional
-    public CustomerProfileResponse updateProfile(
-            Jwt jwt,
-            UpdateCustomerProfileRequest request) {
-
-        CustomerProfile profile = repository
-            .findByKeycloakUserId(jwt.getSubject())
-            .orElseGet(() -> createProfile(jwt));
-
-        synchronizeIdentityClaims(profile, jwt);
-        profile.setPhone(request.phone());
-
-        return toResponse(profile);
-    }
-
-    private CustomerProfile createProfile(Jwt jwt) {
-
-        CustomerProfile profile = new CustomerProfile();
-
-        profile.setKeycloakUserId(jwt.getSubject());
-        synchronizeIdentityClaims(profile, jwt);
-
-        return repository.save(profile);
-    }
-
-    private void synchronizeIdentityClaims(
-            CustomerProfile profile,
-            Jwt jwt) {
-
-        profile.setUsername(
-            jwt.getClaimAsString("preferred_username")
-        );
-
-        profile.setEmail(
-            jwt.getClaimAsString("email")
-        );
-
-        profile.setFirstName(
-            jwt.getClaimAsString("given_name")
-        );
-
-        profile.setLastName(
-            jwt.getClaimAsString("family_name")
-        );
-    }
-
-    private CustomerProfileResponse toResponse(
-            CustomerProfile profile) {
-
-        return new CustomerProfileResponse(
-            profile.getId(),
-            profile.getKeycloakUserId(),
-            profile.getUsername(),
-            profile.getEmail(),
-            profile.getFirstName(),
-            profile.getLastName(),
-            profile.getPhone(),
-            profile.getCreatedAt(),
-            profile.getUpdatedAt()
-        );
-    }
-}
-This synchronizes selected identity claims whenever the profile is accessed. It does not synchronize passwords or roles.
-Step 10: Create the controller
-Create:
-customer-service/src/main/java/com/primecart/controller/CustomerProfileController.java
-package com.primecart.controller;
-
-import com.primecart.dto.request.UpdateCustomerProfileRequest;
-import com.primecart.dto.response.CustomerProfileResponse;
-import com.primecart.service.CustomerProfileService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
-
-@RestController
-@RequestMapping("/api/customers")
-@RequiredArgsConstructor
-public class CustomerProfileController {
-
-    private final CustomerProfileService customerProfileService;
-
-    @GetMapping("/me")
-    public CustomerProfileResponse getMyProfile(
-            @AuthenticationPrincipal Jwt jwt) {
-
-        return customerProfileService.getOrCreateProfile(jwt);
-    }
-
-    @PutMapping("/me")
-    public CustomerProfileResponse updateMyProfile(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody UpdateCustomerProfileRequest request) {
-
-        return customerProfileService.updateProfile(jwt, request);
-    }
-}
-The user ID is always taken from the validated JWT. Do not accept it from a request parameter.
-Step 11: Add JWT role conversion
-Copy these existing classes from order-service into the same packages in customer-service:
-config/AudienceValidator.java
-config/JwtAuthenticationConverter.java
-config/KeycloakRoleConverter.java
-config/SecurityConstants.java
-They already implement:
-realm_access.roles
-        ↓
-ROLE_PROFILE_READ
-ROLE_PROFILE_UPDATE
-Step 12: Add Customer Service security
-Create:
-customer-service/src/main/java/com/primecart/config/SecurityConfig.java
-Use the Order Service security configuration as the base, with these authorization rules:
-.authorizeHttpRequests(auth -> auth
-    .requestMatchers(
-        "/actuator/health/**",
-        "/actuator/info",
-        "/actuator/prometheus"
-    ).permitAll()
-
-    .requestMatchers(HttpMethod.GET, "/api/customers/me")
-    .hasRole("PROFILE_READ")
-
-    .requestMatchers(HttpMethod.PUT, "/api/customers/me")
-    .hasRole("PROFILE_UPDATE")
-
-    .anyRequest()
-    .authenticated()
+Label filter:
+job = product-service
+Options:
+Multi-value: On
+Include All: On
+Custom all value: .*
+Refresh: On dashboard load
+Sort: Alphabetical
+3. Create the endpoint variable
+Add another variable:
+Name: uri
+Label: Endpoint
+Type: Query
+Data source: Prometheus
+Query:
+label_values(
+  http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method"
+  },
+  uri
 )
-Keep the same JWT decoder configuration used by Order Service:
-@Bean
-JwtDecoder jwtDecoder(
-        @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-        String issuerUri,
-        @Value("${primecart.security.jwt.audience}")
-        String expectedAudience) {
+Structured editor equivalent:
+Query type: Label values
+Label: uri
+Metric:
+http_server_requests_seconds_count
 
-    NimbusJwtDecoder decoder = NimbusJwtDecoder
-        .withIssuerLocation(issuerUri)
-        .build();
+Label filters:
+job = product-service
+method =~ $method
+Options:
+Multi-value: On
+Include All: On
+Custom all value: .*
+Refresh: On dashboard load
+Sort: Alphabetical
+Place the variables in this order:
+method → uri
+Select:
+HTTP Method: GET
+Endpoint: /api/products
+to begin.
+4. Optional status variable
+Add:
+Name: status
+Label: HTTP Status
+Type: Query
+Query:
+label_values(
+  http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri"
+  },
+  status
+)
+Options:
+Multi-value: On
+Include All: On
+Custom all value: .*
+Default: All
+Most performance panels should include all status codes. Use this variable mainly for investigation.
+5. Confirm the available labels
+Create a temporary Prometheus query:
+count by (method, uri, status) (
+  http_server_requests_seconds_count{
+    job="product-service"
+  }
+)
+Confirm that it returns route values such as:
+/api/products
+/api/products/{id}
+/api/products/active
+If the job value is different, check:
+label_values(http_server_requests_seconds_count, job)
+Then replace product-service in the queries with the actual job label.
+6. Panel: Request throughput
+Query:
+sum(
+  rate(http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri"
+  }[$__rate_interval])
+)
+Panel settings:
+Title:
+Request Rate — $method $uri
 
-    OAuth2TokenValidator<Jwt> issuerValidator =
-        JwtValidators.createDefaultWithIssuer(issuerUri);
+Visualization:
+Time series
 
-    OAuth2TokenValidator<Jwt> audienceValidator =
-        new AudienceValidator(expectedAudience);
+Unit:
+Throughput → requests/sec
 
-    decoder.setJwtValidator(
-        new DelegatingOAuth2TokenValidator<>(
-            issuerValidator,
-            audienceValidator
-        )
-    );
+Min:
+0
 
-    return decoder;
-}
-Configure the resource server with the custom role converter:
-.oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt
-    .decoder(jwtDecoder)
-    .jwtAuthenticationConverter(
-        new JwtAuthenticationConverter()
-    )
-));
-Step 13: Add Keycloak roles
-In the primecart realm, create:
-PROFILE_READ
-PROFILE_UPDATE
-Assign both roles to the test user.
-Then log out and log in again. Confirm the new token contains:
-"realm_access": {
-  "roles": [
-    "PROFILE_READ",
-    "PROFILE_UPDATE"
-  ]
-}
-Step 14: Add the Gateway route
-In API Gateway application.yml, add:
-- id: customer-service
-  uri: http://localhost:8086
-  predicates:
-    - Path=/api/customers/**
-Place it with the other service routes.
-Step 15: Add Gateway authorization
-In API Gateway SecurityConfig.java, add before .anyExchange():
-.pathMatchers(HttpMethod.GET, "/api/customers/me")
-.hasRole("PROFILE_READ")
+Decimals:
+2
 
-.pathMatchers(HttpMethod.PUT, "/api/customers/me")
-.hasRole("PROFILE_UPDATE")
-Step 16: Start Customer Service with TLS trust
-Customer Service contacts HTTPS Keycloak, so start it with the Java truststore:
-export JAVA_TOOL_OPTIONS="\
--Djavax.net.ssl.trustStore=/Users/dadaramjadhav/primecart/infra/tls/primecart-truststore-v2.p12 \
--Djavax.net.ssl.trustStorePassword=changeit \
--Djavax.net.ssl.trustStoreType=PKCS12"
-export CUSTOMER_DB_PASSWORD='your-local-database-password'
-cd /Users/dadaramjadhav/primecart/customer-service
-mvn spring-boot:run
-Step 17: Test the flow
-After logging into the UI, copy the access token for local testing without sharing it:
-export ACCESS_TOKEN='your-access-token'
-Call through the Gateway:
-curl -i \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  https://localhost:8181/api/customers/me
-On the first request, a row should be created. Example response:
-{
-  "id": 1,
-  "keycloakUserId": "83a0c8b2-104c-4fba-8460-36ae6050e400",
-  "username": "user",
-  "email": "user@gmail.com",
-  "firstName": "user",
-  "lastName": "user",
-  "phone": null,
-  "createdAt": "2026-07-20T10:30:00",
-  "updatedAt": "2026-07-20T10:30:00"
-}
-Call it again. It should return the same row, not create another one.
-Update the application-owned phone field:
-curl -i \
-  -X PUT \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"phone":"+91 9876543210"}' \
-  https://localhost:8181/api/customers/me
-This completes the first backend flow. The next phase would add shipping addresses as a separate customer_addresses table linked to customer_profiles.id.
+Query type:
+Range
+Graph settings:
+Draw style: Lines
+Line width: 2
+Fill opacity: 15
+Show points: Never
+Stacking: Off
+Connect null values: Never
+Legend:
+Mode: Table
+Placement: Bottom
+Values: Last, Mean, Max
+No threshold is necessary initially.
+7. Panel: Average latency
+Query:
+sum(
+  rate(http_server_requests_seconds_sum{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri"
+  }[$__rate_interval])
+)
+/
+clamp_min(
+  sum(
+    rate(http_server_requests_seconds_count{
+      job="product-service",
+      method=~"$method",
+      uri=~"$uri"
+    }[$__rate_interval])
+  ),
+  0.000001
+)
+Settings:
+Title:
+Average Latency — $method $uri
 
+Visualization:
+Time series
 
+Unit:
+Time → seconds (s)
 
-SBA_PASSWORD=123
-RABBITMQ_PASSWORD=123
-DB_PASSWORD=Admin@12345
+Min:
+0
+
+Decimals:
+Auto
+The metric returns seconds. Grafana will automatically display smaller values in milliseconds.
+Thresholds:
+Base: Green
+0.3 seconds: Yellow
+0.5 seconds: Red
+If the Grafana threshold editor displays values in milliseconds after unit conversion, verify the raw query value first. The PromQL result itself is in seconds.
+8. Panel: p50, p95 and p99 latency
+Use one panel with three queries.
+Query A: p50
+histogram_quantile(
+  0.50,
+  sum by (le) (
+    rate(http_server_requests_seconds_bucket{
+      job="product-service",
+      method=~"$method",
+      uri=~"$uri"
+    }[$__rate_interval])
+  )
+)
+Legend:
+p50
+Query B: p95
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(http_server_requests_seconds_bucket{
+      job="product-service",
+      method=~"$method",
+      uri=~"$uri"
+    }[$__rate_interval])
+  )
+)
+Legend:
+p95
+Query C: p99
+histogram_quantile(
+  0.99,
+  sum by (le) (
+    rate(http_server_requests_seconds_bucket{
+      job="product-service",
+      method=~"$method",
+      uri=~"$uri"
+    }[$__rate_interval])
+  )
+)
+Legend:
+p99
+Panel settings:
+Title:
+Latency Percentiles — $method $uri
+
+Visualization:
+Time series
+
+Unit:
+Time → seconds (s)
+
+Min:
+0
+
+Stacking:
+Off
+
+Legend:
+Table, bottom
+
+Legend values:
+Last, Mean, Max
+Use field overrides for colors:
+p50: Green
+p95: Yellow
+p99: Red
+Do not stack percentile lines. Percentiles are independent statistics and should be compared, not added.
+9. Panel: 5xx error percentage
+Query:
+100 *
+sum(
+  rate(http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri",
+    status=~"5.."
+  }[$__rate_interval])
+)
+/
+clamp_min(
+  sum(
+    rate(http_server_requests_seconds_count{
+      job="product-service",
+      method=~"$method",
+      uri=~"$uri"
+    }[$__rate_interval])
+  ),
+  0.000001
+)
+Settings:
+Title:
+5xx Error Percentage — $method $uri
+
+Visualization:
+Time series
+
+Unit:
+Percent (0-100)
+
+Min:
+0
+
+Max:
+100
+
+Decimals:
+2
+Thresholds:
+Base: Green
+0.5: Yellow
+1: Red
+A healthy service should normally have a 5xx percentage close to zero.
+10. Panel: 4xx response percentage
+Query:
+100 *
+sum(
+  rate(http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri",
+    status=~"4.."
+  }[$__rate_interval])
+)
+/
+clamp_min(
+  sum(
+    rate(http_server_requests_seconds_count{
+      job="product-service",
+      method=~"$method",
+      uri=~"$uri"
+    }[$__rate_interval])
+  ),
+  0.000001
+)
+Settings:
+Title:
+4xx Response Percentage — $method $uri
+
+Visualization:
+Time series
+
+Unit:
+Percent (0-100)
+
+Min:
+0
+
+Max:
+100
+
+Decimals:
+2
+Thresholds:
+Base: Green
+2: Yellow
+5: Red
+Treat these thresholds carefully. Expected authorization failures, invalid requests and product-not-found responses may legitimately produce 4xx responses.
+11. Panel: Response status breakdown
+Query:
+sum by (status) (
+  rate(http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri"
+  }[$__rate_interval])
+)
+Legend:
+HTTP {{status}}
+Settings:
+Title:
+Response Status Rate — $method $uri
+
+Visualization:
+Time series
+
+Unit:
+requests/sec
+
+Min:
+0
+
+Stacking:
+Normal
+
+Stack series:
+On
+Suggested colors:
+2xx: Green
+3xx: Blue
+4xx: Yellow
+5xx: Red
+This is one place where stacking is useful because it shows the composition of total traffic.
+12. Panel: Current request count
+This is optional.
+Query:
+sum(
+  increase(http_server_requests_seconds_count{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri"
+  }[$__range])
+)
+Settings:
+Title:
+Requests in Selected Time Range
+
+Visualization:
+Stat
+
+Unit:
+Short
+
+Decimals:
+0
+
+Calculation:
+Last not null
+
+Color mode:
+Value
+
+Graph mode:
+Area
+This displays the number of requests during the dashboard’s selected time range.
+13. Panel: Maximum recorded latency
+Query:
+max(
+  http_server_requests_seconds_max{
+    job="product-service",
+    method=~"$method",
+    uri=~"$uri"
+  }
+)
+Settings:
+Title:
+Recent Maximum Latency
+
+Visualization:
+Stat
+
+Unit:
+Time → seconds
+
+Calculation:
+Last not null
+
+Color mode:
+Value and background
+Thresholds:
+Base: Green
+0.5 seconds: Yellow
+1 second: Red
+Be careful with this metric: Micrometer’s maximum value is time-window based. It is useful operationally but should not replace p95 and p99.
+14. Panel: Product Service availability
+Query:
+up{job="product-service"}
+Settings:
+Title:
+Product Service Scrape Status
+
+Visualization:
+Stat
+
+Unit:
+Boolean
+
+Calculation:
+Last not null
+
+Color mode:
+Background
+
+Graph mode:
+None
+Value mappings:
+0 → DOWN
+1 → UP
+Thresholds:
+0: Red
+1: Green
+15. Panel: CPU usage
+Query:
+100 * process_cpu_usage{job="product-service"}
+Settings:
+Title:
+Product Service CPU
+
+Visualization:
+Time series
+
+Unit:
+Percent (0-100)
+
+Min:
+0
+
+Max:
+100
+
+Decimals:
+1
+Thresholds:
+Base: Green
+70: Yellow
+85: Red
+16. Panel: JVM heap utilization
+Query:
+100 *
+sum(
+  jvm_memory_used_bytes{
+    job="product-service",
+    area="heap"
+  }
+)
+/
+clamp_min(
+  sum(
+    jvm_memory_max_bytes{
+      job="product-service",
+      area="heap"
+    }
+  ),
+  1
+)
+Settings:
+Title:
+JVM Heap Utilization
+
+Visualization:
+Time series
+
+Unit:
+Percent (0-100)
+
+Min:
+0
+
+Max:
+100
+
+Decimals:
+1
+Thresholds:
+Base: Green
+75: Yellow
+90: Red
+17. Panel: Hikari active and maximum connections
+Use two queries in one panel.
+Query A:
+sum(
+  hikaricp_connections_active{
+    job="product-service"
+  }
+)
+Legend:
+Active
+Query B:
+sum(
+  hikaricp_connections_max{
+    job="product-service"
+  }
+)
+Legend:
+Maximum
+Settings:
+Title:
+Database Connection Pool
+
+Visualization:
+Time series
+
+Unit:
+Short
+
+Decimals:
+0
+
+Min:
+0
+
+Stacking:
+Off
+Colors:
+Active: Yellow
+Maximum: Blue
+If the active line remains close to the maximum, database capacity may be limiting performance.
+18. Panel: Pending database connections
+Query:
+sum(
+  hikaricp_connections_pending{
+    job="product-service"
+  }
+)
+Settings:
+Title:
+Pending Database Connections
+
+Visualization:
+Stat
+
+Unit:
+Short
+
+Decimals:
+0
+
+Calculation:
+Last not null
+
+Color mode:
+Background
+
+Graph mode:
+Area
+Thresholds:
+Base: Green
+1: Yellow
+3: Red
+A brief value of one may occur under load. A sustained non-zero value indicates connection-pool pressure.
+19. Recommended dashboard layout
+┌─────────────────────┬─────────────────────┬──────────────────┐
+│ Service UP          │ Requests in range   │ Maximum latency  │
+├─────────────────────┴─────────────────────┴──────────────────┤
+│ Request rate                                               │
+├─────────────────────────────────────────────────────────────┤
+│ Average latency       │ p50 / p95 / p99                    │
+├───────────────────────┼─────────────────────────────────────┤
+│ 4xx percentage        │ 5xx percentage                     │
+├─────────────────────────────────────────────────────────────┤
+│ Response status breakdown                                  │
+├───────────────────────┬─────────────────────────────────────┤
+│ CPU                   │ JVM heap                            │
+├───────────────────────┼─────────────────────────────────────┤
+│ Hikari active/max     │ Hikari pending                      │
+└───────────────────────┴─────────────────────────────────────┘
+20. Test each Product Controller endpoint
+Generate traffic for the list endpoint:
+for i in {1..100}; do
+  curl --cacert "$(mkcert -CAROOT)/rootCA.pem" \
+    -s -o /dev/null \
+    https://localhost:8181/api/products
+done
+Generate traffic for a product ID:
+for i in {1..100}; do
+  curl --cacert "$(mkcert -CAROOT)/rootCA.pem" \
+    -s -o /dev/null \
+    https://localhost:8181/api/products/1
+done
+Generate traffic for active products:
+for i in {1..100}; do
+  curl --cacert "$(mkcert -CAROOT)/rootCA.pem" \
+    -s -o /dev/null \
+    https://localhost:8181/api/products/active
+done
+After generating traffic, change the dashboard variables:
+GET → /api/products
+GET → /api/products/{id}
+GET → /api/products/active
+The same panels should update without creating endpoint-specific copies.
+Important considerations
+•
+Use $__rate_interval instead of hardcoding [1m]; Grafana adjusts it to the dashboard range and Prometheus scrape interval.
+•
+Use =~"$method" and =~"$uri" because the variables support multiple selections and All.
+•
+Do not add query parameters such as keyword, page or category as metric tags.
+•
+Do not create product-ID labels.
+•
+Avoid choosing All endpoints when comparing endpoint latency; combining very different operations can hide a slow route.
+•
+Use the endpoint variable for HTTP panels, but leave CPU, heap and database panels service-wide.
+•
+Keep p95 as the main service-level latency indicator; use p99 to expose tail latency and p50 to show typical behavior.

@@ -135,7 +135,8 @@ public class ProductController {
 
         log.info("GET /api/products - Products retrieved successfully: returned={}, totalElements={}, totalPages={}",
                  products.getNumberOfElements(), products.getTotalElements(), products.getTotalPages());
-
+//        int a = 10;
+//        if (a == 10) throw new RuntimeException("product error.");
         return ResponseEntity.ok(products);
     }
 }

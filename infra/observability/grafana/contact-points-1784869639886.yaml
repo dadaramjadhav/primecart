@@ -1,0 +1,11 @@
+apiVersion: 1
+contactPoints:
+    - orgId: 1
+      name: PrimeCart Gmail Alerts
+      receivers:
+        - uid: eft019akwrh8gf
+          type: email
+          settings:
+            addresses: dmaws2026@gmail.com
+            singleEmail: false
+          disableResolveMessage: false
