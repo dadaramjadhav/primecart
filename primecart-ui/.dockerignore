@@ -1,0 +1,29 @@
+# Dependencies and generated output
+node_modules
+dist
+coverage
+.npm
+.eslintcache
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Version control and CI
+.git
+.gitignore
+.github
+
+# IDE and operating-system files
+.idea
+.vscode
+*.iml
+.DS_Store
+
+# Documentation and temporary files
+README.md
+adminmodule.md
+temp.js
+*.log
+*.tmp
