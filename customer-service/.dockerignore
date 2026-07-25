@@ -1,0 +1,7 @@
+# Exclude everything by default
+*
+
+# Runtime image only requires the Dockerfile and packaged JAR
+!Dockerfile
+!target/
+!target/*.jar

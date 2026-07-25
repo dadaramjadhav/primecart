@@ -1,0 +1,45 @@
+name: Inventory Service CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "inventory-service/**"
+      - ".github/workflows/inventory-service-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "inventory-service/**"
+      - ".github/workflows/inventory-service-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inventory-service-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  inventory-service:
+    name: Inventory Service pipeline
+    uses: ./.github/workflows/reusable-java-service-ci.yml
+
+    with:
+      service_directory: inventory-service
+      service_name: inventory-service
+      dockerhub_image_name: primecart-inventory-service
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      sonar_project_key: ${{ vars.SONAR_PROJECT_KEY }}
+      sonar_organization: ${{ vars.SONAR_ORGANIZATION }}
+      java_version: "17"
+
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKER
