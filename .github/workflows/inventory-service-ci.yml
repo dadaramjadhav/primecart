@@ -36,7 +36,7 @@ jobs:
       service_name: inventory-service
       dockerhub_image_name: primecart-inventory-service
       dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-      sonar_project_key: ${{ vars.SONAR_PROJECT_KEY }}
+      sonar_project_key: ${{ vars.SONAR_INVENTORY_SERVICE_PROJECT_KEY }}
       sonar_organization: ${{ vars.SONAR_ORGANIZATION }}
       java_version: "17"
 
