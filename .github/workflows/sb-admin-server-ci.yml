@@ -1,0 +1,45 @@
+name: Spring Boot Admin Server CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "sb-admin-server/**"
+      - ".github/workflows/sb-admin-server-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "sb-admin-server/**"
+      - ".github/workflows/sb-admin-server-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sb-admin-server-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sb-admin-server:
+    name: Spring Boot Admin Server pipeline
+    uses: ./.github/workflows/reusable-java-service-ci.yml
+
+    with:
+      service_directory: sb-admin-server
+      service_name: sb-admin-server
+      dockerhub_image_name: primecart-sb-admin-server
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      sonar_project_key: ${{ vars.SONAR_SB_ADMIN_SERVER_PROJECT_KEY }}
+      sonar_organization: ${{ vars.SONAR_ORGANIZATION }}
+      java_version: "17"
+
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
