@@ -42,4 +42,4 @@ jobs:
 
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKER }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
