@@ -1,15 +1,109 @@
+# Environment files and secrets
 .env
-.env.local
-.env.*.local
-infra/tls/*.pem
-infra/tls/*.key
-infra/tls/*.p12
-infra/tls/*.jks
-
-splunk/.env
-splunk/licenses/*.lic
-logs/
-
-infra/secrets/*.env
-.env
+.env.*
+!.env.example
+!**/.env.example
 *.env
+!*.env.example
+**/secrets/
+**/licenses/*.lic
+
+# Certificates and private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+*.csr
+
+# Java and Maven
+**/target/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+*.war
+*.ear
+.mvn/timing.properties
+.flattened-pom.xml
+dependency-reduced-pom.xml
+
+# Frontend dependencies and build output
+**/node_modules/
+**/dist/
+**/build/
+**/.next/
+**/coverage/
+**/.npm/
+**/.eslintcache
+*.tsbuildinfo
+
+# IDEs and editors
+.idea/
+**/.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating-system files
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Logs and runtime files
+logs/
+**/logs/
+*.log
+*.log.*
+*.pid
+*.pid.lock
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# Local observability data
+devops/observability/tempo-data/
+devops/observability/prometheus/data/
+devops/observability/grafana/data/
+devops/observability/loki/data/
+devops/elk/elasticsearch/data/
+devops/splunk/data/
+
+# Terraform local state and generated files
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+crash.*.log
+
+# Kubernetes local/generated configuration
+**/kubeconfig
+**/kubeconfig.*
+!**/kubeconfig.example
+**/*-secret.yaml
+**/*-secrets.yaml
+
+# Test and tool output
+**/surefire-reports/
+**/failsafe-reports/
+**/allure-results/
+**/test-results/
+.scannerwork/
+.sonar/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig

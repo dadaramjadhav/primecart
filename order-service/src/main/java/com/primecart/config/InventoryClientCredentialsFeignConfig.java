@@ -1,5 +1,6 @@
 package com.primecart.config;
 
+import com.primecart.exception.DownstreamAuthenticationException;
 import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
@@ -25,7 +26,7 @@ public class InventoryClientCredentialsFeignConfig {
             OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(authorizeRequest);
 
             if (authorizedClient == null) {
-                throw new IllegalStateException("Unable to obtain order-service access token");
+                throw new DownstreamAuthenticationException("Unable to obtain order-service access token");
             }
 
             String accessToken = authorizedClient

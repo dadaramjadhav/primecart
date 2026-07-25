@@ -1,5 +1,6 @@
 package com.primecart.config;
 
+import com.primecart.exception.AuthenticationCredentialsNotFoundException;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,35 +12,28 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 @Component
-public class CurrentUserResolver
-        implements HandlerMethodArgumentResolver {
+public class CurrentUserResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
 
-        return parameter.hasParameterAnnotation(CurrentUser.class)
-                && parameter.getParameterType()
-                            .equals(String.class);
+        return parameter.hasParameterAnnotation(CurrentUser.class) && parameter
+                .getParameterType()
+                .equals(String.class);
     }
 
     @Override
     public Object resolveArgument(
-            MethodParameter parameter,
-            ModelAndViewContainer mavContainer,
-            NativeWebRequest webRequest,
-            WebDataBinderFactory binderFactory) {
+            MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest,
+            WebDataBinderFactory binderFactory
+    ) {
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        if (authentication == null ||
-                !authentication.isAuthenticated()) {
-
-            throw new RuntimeException(
-                    "User is not authenticated"
-            );
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationCredentialsNotFoundException("Authenticated JWT principal is required");
         }
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return jwt.getSubject();

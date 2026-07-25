@@ -1,14 +1,90 @@
+# Version control
 .git
+.gitignore
+.gitattributes
 .github
+
+# IDEs and operating-system files
 .idea
+**/.idea
 .vscode
-target
-node_modules
+**/.vscode
+*.iml
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Secrets, local configuration and certificates
 .env
 .env.*
+**/.env
+**/.env.*
+**/secrets
+**/secrets/**
 *.pem
 *.key
 *.p12
+*.pfx
 *.jks
+*.keystore
+*.crt
+*.cer
+
+# Java build output: retain only packaged application JARs
+**/target/*
+!**/target/*.jar
+**/*.class
+**/*.war
+**/*.ear
+
+# Node and frontend output
+**/node_modules
+**/node_modules/**
+**/dist
+**/dist/**
+**/build
+**/build/**
+**/coverage
+**/coverage/**
+**/.npm
+**/.eslintcache
+
+# Logs, dumps and temporary files
+**/logs
+**/logs/**
+**/*.log
+**/*.log.*
+**/*.pid
+**/*.hprof
+**/hs_err_pid*
+**/tmp
+**/tmp/**
+**/temp
+**/temp/**
+**/*.tmp
+**/*.bak
+
+# Local infrastructure state
+**/.terraform
+**/.terraform/**
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+devops/observability/tempo-data
+devops/observability/tempo-data/**
+devops/observability/prometheus/data
+devops/observability/prometheus/data/**
+devops/observability/grafana/data
+devops/observability/grafana/data/**
+devops/elk/elasticsearch/data
+devops/elk/elasticsearch/data/**
+devops/splunk/data
+devops/splunk/data/**
+
+# Repository files not required in application images
 docs
+docs/**
 README.md
+**/README.md
+LICENSE
+todos

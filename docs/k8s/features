@@ -1,0 +1,109 @@
+Feature
+Local support
+Notes
+Pods
+Yes
+Fully suitable
+Deployments
+Yes
+Replicas, rollout, rollback and self-healing
+ReplicaSets
+Yes
+Normally managed through Deployments
+Services
+Yes
+ClusterIP, NodePort and local LoadBalancer behavior
+ConfigMaps
+Yes
+Fully suitable
+Secrets
+Yes
+Kubernetes behavior works, but local secrets are not production secret management
+Namespaces
+Yes
+Fully suitable
+Readiness/liveness probes
+Yes
+Fully suitable
+Resource requests/limits
+Yes
+Limited by Docker Desktop’s allocated CPU and memory
+Jobs and CronJobs
+Yes
+Fully suitable
+Persistent volumes
+Yes
+Suitable for local testing, not production durability
+Ingress
+Yes, after installing a controller
+Install NGINX Ingress, Traefik or another implementation
+Gateway API
+Yes, after installing an implementation
+The API alone does not route traffic
+Spring API Gateway
+Yes
+Deploy it as an ordinary application
+Horizontal Pod Autoscaler
+Partially
+Requires Metrics Server
+NetworkPolicy
+Depends on CNI
+The API may accept policies even if the network plugin does not enforce them
+LoadBalancer Service
+Local implementation
+It will not create an AWS ALB/NLB
+Helm
+Yes
+Fully suitable
+Operators/CRDs
+Yes
+Fully suitable
+RBAC and ServiceAccounts
+Yes
+Fully suitable
+Rolling updates
+Yes
+Better with multiple worker nodes
+Pod disruption/failover
+Limited with one node
+Multi-node is more realistic
+=======================
+One-node limitations
+Your current cluster has one node. It is enough for:
+•
+Pod lifecycle
+•
+Deployments
+•
+Services
+•
+Secrets and ConfigMaps
+•
+Health probes
+•
+Rolling updates
+•
+Helm
+•
+Ingress
+•
+Application routing
+•
+Basic autoscaling
+•
+Most debugging commands
+It cannot realistically prove:
+•
+Node failure recovery
+•
+Cross-node networking
+•
+Pod anti-affinity across nodes
+•
+Topology spread
+•
+Multi-zone availability
+•
+Pod rescheduling after losing a worker
+•
+Real high availability
