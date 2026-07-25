@@ -1,0 +1,205 @@
+name: Reusable Java Service CI
+
+on:
+  workflow_call:
+    inputs:
+      service_directory:
+        required: true
+        type: string
+
+      service_name:
+        required: true
+        type: string
+
+      dockerhub_image_name:
+        required: true
+        type: string
+
+      dockerhub_username:
+        required: true
+        type: string
+
+      sonar_project_key:
+        required: true
+        type: string
+
+      sonar_organization:
+        required: true
+        type: string
+
+      java_version:
+        required: false
+        default: "17"
+        type: string
+
+    secrets:
+      SONAR_TOKEN:
+        required: true
+
+      DOCKERHUB_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build, test and analyze ${{ inputs.service_name }}
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.service_directory }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java ${{ inputs.java_version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java_version }}
+          cache: maven
+          cache-dependency-path: ${{ inputs.service_directory }}/pom.xml
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build, test and analyze with SonarQube Cloud
+        if: >
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ inputs.sonar_project_key }}
+          SONAR_ORGANIZATION: ${{ inputs.sonar_organization }}
+        run: |
+          ./mvnw \
+            --batch-mode \
+            --no-transfer-progress \
+            clean verify \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+            -Dsonar.organization="${SONAR_ORGANIZATION}" \
+            -Dsonar.qualitygate.wait=false \
+            -Dsonar.qualitygate.timeout=300
+
+      - name: Verify fork pull request without SonarQube token
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          ./mvnw \
+            --batch-mode \
+            --no-transfer-progress \
+            clean verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.service_name }}-test-reports-${{ github.run_number }}
+          path: ${{ inputs.service_directory }}/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload packaged JAR
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.service_name }}-jar-${{ github.sha }}
+          path: |
+            ${{ inputs.service_directory }}/target/*.jar
+            !${{ inputs.service_directory }}/target/*.jar.original
+          if-no-files-found: error
+          retention-days: 7
+
+  container-build-and-scan:
+    name: Build, scan and publish ${{ inputs.service_name }}
+    needs:
+      - build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Download packaged JAR
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ inputs.service_name }}-jar-${{ github.sha }}
+          path: ${{ inputs.service_directory }}/target
+
+      - name: Build Docker image
+        env:
+          LOCAL_IMAGE: primecart/${{ inputs.service_name }}:${{ github.sha }}
+        run: |
+          docker build \
+            --tag "${LOCAL_IMAGE}" \
+            "${{ inputs.service_directory }}"
+
+      - name: Display image details
+        env:
+          LOCAL_IMAGE: primecart/${{ inputs.service_name }}:${{ github.sha }}
+        run: |
+          docker image inspect \
+            "${LOCAL_IMAGE}" \
+            --format='Image={{.RepoTags}} Size={{.Size}} User={{.Config.User}}'
+
+      - name: Scan image and create vulnerability report
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: primecart/${{ inputs.service_name }}:${{ github.sha }}
+          format: json
+          output: trivy-${{ inputs.service_name }}.json
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          vuln-type: os,library
+          ignore-unfixed: false
+          exit-code: "0"
+
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.service_name }}-vulnerability-report-${{ github.sha }}
+          path: trivy-${{ inputs.service_name }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Display fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: primecart/${{ inputs.service_name }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          vuln-type: os,library
+          ignore-unfixed: true
+          exit-code: "0"
+          skip-setup-trivy: true
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ inputs.dockerhub_username }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag and push image to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SOURCE_IMAGE: primecart/${{ inputs.service_name }}:${{ github.sha }}
+          SHA_IMAGE: ${{ inputs.dockerhub_username }}/${{ inputs.dockerhub_image_name }}:${{ github.sha }}
+          MAIN_IMAGE: ${{ inputs.dockerhub_username }}/${{ inputs.dockerhub_image_name }}:main
+        run: |
+          docker tag "${SOURCE_IMAGE}" "${SHA_IMAGE}"
+          docker tag "${SOURCE_IMAGE}" "${MAIN_IMAGE}"
+
+          docker push "${SHA_IMAGE}"
+          docker push "${MAIN_IMAGE}"
+
+          echo "Published ${SHA_IMAGE}"
+          echo "Published ${MAIN_IMAGE}"
