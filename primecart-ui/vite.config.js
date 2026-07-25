@@ -4,9 +4,9 @@ import tailwindcss from "@tailwindcss/vite"
 import { fileURLToPath, URL } from "node:url"
 import fs from "node:fs"
 
-const certificatePath = fileURLToPath(new URL("../infra/tls/localhost-cert.pem", import.meta.url))
+const certificatePath = fileURLToPath(new URL("../devops/tls/localhost-cert.pem", import.meta.url))
 
-const privateKeyPath = fileURLToPath(new URL("../infra/tls/localhost-key.pem", import.meta.url))
+const privateKeyPath = fileURLToPath(new URL("../devops/tls/localhost-key.pem", import.meta.url))
 
 const developmentCsp = [
   "default-src 'self'",
