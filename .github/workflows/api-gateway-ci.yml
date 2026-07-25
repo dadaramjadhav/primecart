@@ -1,0 +1,45 @@
+name: API Gateway CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "api-gateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "api-gateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-gateway-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-gateway:
+    name: API Gateway pipeline
+    uses: ./.github/workflows/reusable-java-service-ci.yml
+
+    with:
+      service_directory: api-gateway
+      service_name: api-gateway
+      dockerhub_image_name: primecart-api-gateway
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      sonar_project_key: ${{ vars.SONAR_API_GATEWAY_PROJECT_KEY }}
+      sonar_organization: ${{ vars.SONAR_ORGANIZATION }}
+      java_version: "17"
+
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
