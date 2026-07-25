@@ -71,3 +71,62 @@ jobs:
             !product-service/target/*.jar.original
           if-no-files-found: error
           retention-days: 7
+
+  container-build-and-scan:
+    name: Build and scan Product Service image
+    needs:
+      - build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Download packaged JAR
+        uses: actions/download-artifact@v7
+        with:
+          name: product-service-jar-${{ github.sha }}
+          path: product-service/target
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag primecart/product-service:${{ github.sha }} \
+            product-service
+
+      - name: Display image details
+        run: |
+          docker image inspect \
+            primecart/product-service:${{ github.sha }} \
+            --format='Image={{.RepoTags}} Size={{.Size}} User={{.Config.User}}'
+
+      - name: Scan image and create vulnerability report
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: primecart/product-service:${{ github.sha }}
+          format: json
+          output: trivy-product-service.json
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          vuln-type: os,library
+          ignore-unfixed: false
+          exit-code: "0"
+
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: product-service-vulnerability-report-${{ github.sha }}
+          path: trivy-product-service.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail on fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: primecart/product-service:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          vuln-type: os,library
+          ignore-unfixed: true
+          exit-code: "1"
+          skip-setup-trivy: true
