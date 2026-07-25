@@ -1,0 +1,45 @@
+name: Payment Service CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "payment-service/**"
+      - ".github/workflows/payment-service-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "payment-service/**"
+      - ".github/workflows/payment-service-ci.yml"
+      - ".github/workflows/reusable-java-service-ci.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: payment-service-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  payment-service:
+    name: Payment Service pipeline
+    uses: ./.github/workflows/reusable-java-service-ci.yml
+
+    with:
+      service_directory: payment-service
+      service_name: payment-service
+      dockerhub_image_name: primecart-payment-service
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      sonar_project_key: ${{ vars.SONAR_PAYMENT_SERVICE_PROJECT_KEY }}
+      sonar_organization: ${{ vars.SONAR_ORGANIZATION }}
+      java_version: "17"
+
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
