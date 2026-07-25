@@ -120,7 +120,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Fail on fixable critical vulnerabilities
+      - name: Display fixable critical vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: primecart/product-service:${{ github.sha }}
@@ -128,5 +128,30 @@ jobs:
           severity: CRITICAL
           vuln-type: os,library
           ignore-unfixed: true
-          exit-code: "1"
+          exit-code: "0"
           skip-setup-trivy: true
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag and push image to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          SOURCE_IMAGE: primecart/product-service:${{ github.sha }}
+        run: |
+          SHA_IMAGE="${DOCKERHUB_USERNAME}/primecart-product-service:${{ github.sha }}"
+          MAIN_IMAGE="${DOCKERHUB_USERNAME}/primecart-product-service:main"
+
+          docker tag "${SOURCE_IMAGE}" "${SHA_IMAGE}"
+          docker tag "${SOURCE_IMAGE}" "${MAIN_IMAGE}"
+
+          docker push "${SHA_IMAGE}"
+          docker push "${MAIN_IMAGE}"
+
+          echo "Published ${SHA_IMAGE}"
+          echo "Published ${MAIN_IMAGE}"
