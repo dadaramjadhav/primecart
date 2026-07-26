@@ -35,3 +35,28 @@ images:
 
   - name: dadaramjadhav/primecart-ui
     newTag: a5e2b782908434f9954740a2d452531bb34d9b0d
+
+replicas:
+  - name: api-gateway
+    count: 2
+
+  - name: cart-service
+    count: 2
+
+  - name: customer-service
+    count: 2
+
+  - name: inventory-service
+    count: 2
+
+  - name: order-service
+    count: 2
+
+  - name: payment-service
+    count: 2
+
+  - name: product-service
+    count: 2
+
+  - name: primecart-ui
+    count: 2

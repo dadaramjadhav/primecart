@@ -11,3 +11,10 @@ images:
 
   - name: dadaramjadhav/primecart-sb-admin-server
     newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+
+replicas:
+  - name: config-server
+    count: 2
+
+  - name: sb-admin-server
+    count: 1

@@ -1,0 +1,85 @@
+k8s pending topics
+
+1. Full lifecycle validation
+Backup
+Stop
+Fresh deployment
+Port-forward
+Sanity check
+Restore testing
+2. Basic Ingress
+Ingress concepts
+NGINX Ingress
+UI routing
+API Gateway routing
+Keycloak routing
+Local DNS names
+Reduce port-forwarding
+3. Basic HTTPS
+HTTPS concept
+Local TLS certificate
+HTTPS Ingress
+Keycloak HTTPS issuer
+UI HTTPS configuration
+4. Application storage
+StorageClass concept
+PV
+PVC
+StatefulSet storage
+Database persistence
+Backup and restore
+5. Application networking
+Pod networking
+Service networking
+ClusterIP
+CoreDNS
+Service discovery
+Ingress versus Service
+6. Secrets and application security
+Kubernetes Secrets
+Spring Boot Secret environment variables
+Non-root containers
+Read-only filesystem
+Basic ServiceAccount and RBAC concepts
+Image tag and digest pinning
+Remove latest tags
+7. Resource management
+kubectl top
+CPU requests and limits
+Memory requests and limits
+Java heap versus container memory
+Environment-specific resource patches
+8. Application availability
+Rolling updates
+Startup probes
+Readiness probes
+Liveness probes
+Graceful shutdown
+Replica counts
+Basic HPA
+Rollback
+9. Observability
+Spring Boot Actuator
+Prometheus metrics
+Grafana dashboards
+Basic alerts
+Centralized logs
+OpenTelemetry
+Tempo traces
+Trace and span correlation
+10. Environment configuration
+Local/dev/prod overlays
+Environment-specific URLs
+Keycloak issuers
+UI build configuration
+Ingress domains
+Production resource configuration
+11. Basic GitHub Actions CD
+workflow_dispatch
+Environment selection
+Image verification
+Kustomize rendering
+Deployment
+Rollout checks
+Sanity checks
+Basic rollback

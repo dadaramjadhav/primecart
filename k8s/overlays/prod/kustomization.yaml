@@ -4,3 +4,9 @@ kind: Kustomization
 resources:
   - applications
   - platform
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: prod
+    includeSelectors: false
+    includeTemplates: true

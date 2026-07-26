@@ -73,3 +73,168 @@ spec:
                 name: monitoring-grafana
                 port:
                   name: http-web
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: primecart-observe
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: prometheus.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: monitoring-kube-prometheus-prometheus
+                port:
+                  name: http-web
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: product-service
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: product.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: product-service
+                port:
+                  name: http
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payment-service
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: payment.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  name: http
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cart-service
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: cart.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cart-service
+                port:
+                  name: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: customer-service
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: customer.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-service
+                port:
+                  name: http
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inventory-service
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: inventory.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inventory-service
+                port:
+                  name: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: order-service
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: order.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  name: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sb-admin-server
+  namespace: primecart-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: sbadmin.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sb-admin-server
+                port:
+                  name: http
+
