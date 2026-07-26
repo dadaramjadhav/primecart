@@ -13,25 +13,25 @@ resources:
 
 images:
   - name: dadaramjadhav/primecart-api-gateway
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-cart-service
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-customer-service
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-inventory-service
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-order-service
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-payment-service
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-product-service
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: main
 
   - name: dadaramjadhav/primecart-ui
-    newTag: a5e2b782908434f9954740a2d452531bb34d9b0d
+    newTag: main
