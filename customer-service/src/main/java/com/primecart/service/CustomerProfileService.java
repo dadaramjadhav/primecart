@@ -8,5 +8,7 @@ public interface CustomerProfileService {
 
     CustomerProfileResponse getProfile(Jwt jwt);
 
+    CustomerProfileResponse createProfile(Jwt jwt, UpdateCustomerProfileRequest request);
+
     CustomerProfileResponse updateProfile(Jwt jwt, UpdateCustomerProfileRequest request);
 }

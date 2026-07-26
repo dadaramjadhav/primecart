@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-databases
+  namespace: primecart-infra
+data:
+  init.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    root_password="$(</opt/bitnami/mysql/secrets/mysql-root-password)"
+
+    MYSQL_PWD="${root_password}" mysql --user=root <<'SQL'
+    CREATE DATABASE IF NOT EXISTS keycloak;
+    CREATE DATABASE IF NOT EXISTS product;
+    CREATE DATABASE IF NOT EXISTS inventory;
+    CREATE DATABASE IF NOT EXISTS customer;
+    CREATE DATABASE IF NOT EXISTS cart;
+    CREATE DATABASE IF NOT EXISTS orders;
+    CREATE DATABASE IF NOT EXISTS payment;
+
+    GRANT ALL PRIVILEGES ON keycloak.* TO 'primecart'@'%';
+    GRANT ALL PRIVILEGES ON product.* TO 'primecart'@'%';
+    GRANT ALL PRIVILEGES ON inventory.* TO 'primecart'@'%';
+    GRANT ALL PRIVILEGES ON customer.* TO 'primecart'@'%';
+    GRANT ALL PRIVILEGES ON cart.* TO 'primecart'@'%';
+    GRANT ALL PRIVILEGES ON orders.* TO 'primecart'@'%';
+    GRANT ALL PRIVILEGES ON payment.* TO 'primecart'@'%';
+
+    FLUSH PRIVILEGES;
+    SQL

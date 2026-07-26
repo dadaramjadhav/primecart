@@ -10,8 +10,8 @@ spring:
     name: customer-service
 
   config:
-    import: configserver:http://localhost:8888
+    import: ${SPRING_CONFIG_IMPORT:configserver:http://localhost:8888}
 
   cloud:
     config:
-      label: main
+      label: ${CONFIG_GIT_DEFAULT_LABEL:main}

@@ -13,14 +13,14 @@ spring:
 
   security:
     user:
-      name: admin
+      name: ${SBA_USERNAME:admin}
       password: ${SBA_PASSWORD}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: when-authorized

@@ -1,0 +1,47 @@
+architecture: standalone
+
+fullnameOverride: mysql
+
+global:
+  security:
+    allowInsecureImages: true
+
+image:
+  repository: bitnamilegacy/mysql
+  tag: 9.4.0-debian-12-r1
+
+auth:
+  createDatabase: true
+  database: primecart
+  username: primecart
+  existingSecret: mysql-credentials
+
+initdbScriptsConfigMap: mysql-init-databases
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: hostpath
+    size: 5Gi
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  livenessProbe:
+    enabled: true
+
+  readinessProbe:
+    enabled: true
+
+metrics:
+  enabled: false
+
+service:
+  type: ClusterIP
+  ports:
+    mysql: 3306

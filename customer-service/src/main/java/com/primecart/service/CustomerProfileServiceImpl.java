@@ -4,6 +4,7 @@ import com.primecart.dto.request.UpdateCustomerProfileRequest;
 import com.primecart.dto.response.CustomerProfileResponse;
 import com.primecart.entity.CustomerProfile;
 import com.primecart.exception.CustomerProfileNotFoundException;
+import com.primecart.exception.DuplicateResourceException;
 import com.primecart.repository.CustomerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
         CustomerProfile profile = repository
                 .findByKeycloakUserId(jwt.getSubject())
-                .orElseGet(() -> createProfile(jwt));
+                .orElseGet(() -> newProfileFromJwt(jwt));
 
         synchronizeKeycloakIdentity(profile, jwt);
         profile.setPhone(request.phone());
@@ -45,7 +46,27 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
         return toResponse(profile);
     }
 
-    private CustomerProfile createProfile(Jwt jwt) {
+    @Override
+    @Transactional
+    public CustomerProfileResponse createProfile(Jwt jwt, UpdateCustomerProfileRequest request) {
+
+        if (repository
+                .findByKeycloakUserId(jwt.getSubject())
+                .isPresent()) {
+            throw new DuplicateResourceException("Customer profile already exists");
+        }
+
+        CustomerProfile profile = new CustomerProfile();
+        profile.setKeycloakUserId(jwt.getSubject());
+        synchronizeKeycloakIdentity(profile, jwt);
+        profile.setFirstName(request.firstName());
+        profile.setLastName(request.lastName());
+        profile.setPhone(request.phone());
+
+        return toResponse(repository.save(profile));
+    }
+
+    private CustomerProfile newProfileFromJwt(Jwt jwt) {
 
         log.info("Creating customer profile for keycloakUserId={}", jwt.getSubject());
         CustomerProfile profile = new CustomerProfile();

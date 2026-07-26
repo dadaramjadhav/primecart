@@ -1,0 +1,192 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: primecart-observe
+data:
+  logstash.yml: |
+    http.host: 0.0.0.0
+    queue.type: persisted
+    queue.max_bytes: 1gb
+    dead_letter_queue.enable: true
+
+  logstash.conf: |
+    input {
+      tcp {
+        port => 5000
+        codec => json_lines
+      }
+    }
+
+    filter {
+      mutate {
+        add_field => {
+          "deployment_environment" => "local-kubernetes"
+        }
+      }
+    }
+
+    output {
+      http {
+        url => "${SPLUNK_HEC_URL}"
+        http_method => "post"
+        format => "json"
+        content_type => "application/json"
+
+        headers => {
+          "Authorization" => "Splunk ${SPLUNK_HEC_TOKEN}"
+        }
+
+        automatic_retries => 2
+        retry_failed => true
+      }
+
+      stdout {
+        codec => rubydebug
+      }
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logstash-data
+  namespace: primecart-observe
+  labels:
+    app.kubernetes.io/name: logstash
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+  namespace: primecart-observe
+  labels:
+    app.kubernetes.io/name: logstash
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: logstash
+  ports:
+    - name: tcp-logs
+      port: 5000
+      targetPort: tcp-logs
+
+    - name: api
+      port: 9600
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: primecart-observe
+  labels:
+    app.kubernetes.io/name: logstash
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: logstash
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: logstash
+    spec:
+      securityContext:
+        fsGroup: 1000
+
+      containers:
+        - name: logstash
+          image: docker.elastic.co/logstash/logstash:8.18.3
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: SPLUNK_HEC_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-credentials
+                  key: splunk-hec-token
+
+            - name: SPLUNK_HEC_URL
+              value: http://host.docker.internal:8088/services/collector/raw?index=main&sourcetype=primecart:json&source=%{[service]}
+
+            - name: LS_JAVA_OPTS
+              value: -Xms512m -Xmx512m
+
+          ports:
+            - name: tcp-logs
+              containerPort: 5000
+
+            - name: api
+              containerPort: 9600
+
+          startupProbe:
+            tcpSocket:
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 30
+
+          readinessProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: logstash-config
+              mountPath: /usr/share/logstash/config/logstash.yml
+              subPath: logstash.yml
+              readOnly: true
+
+            - name: logstash-config
+              mountPath: /usr/share/logstash/pipeline/logstash.conf
+              subPath: logstash.conf
+              readOnly: true
+
+            - name: logstash-data
+              mountPath: /usr/share/logstash/data
+
+      volumes:
+        - name: logstash-config
+          configMap:
+            name: logstash-config
+
+        - name: logstash-data
+          persistentVolumeClaim:
+            claimName: logstash-data

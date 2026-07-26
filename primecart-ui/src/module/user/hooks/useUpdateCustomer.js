@@ -9,7 +9,7 @@ function useUpdateCustomer() {
     mutationFn: updateCustomerProfile,
 
     onSuccess: (updatedCustomer) => {
-      queryClient.setQueryData(["customer", "profile"], updatedCustomer)
+      queryClient.setQueryData(["customers", "profile"], updatedCustomer)
     },
   })
 

@@ -5,17 +5,11 @@ services:
 
     command: start-dev
 
-
     env_file:
       - ../secrets/primecart.env
 
     ports:
       - "8080:8080"
-      - "8443:8443"   # HTTPS
-
-    volumes:
-      - /Users/dadaramjadhav/primecart/infra/tls/localhost-cert.pem:/opt/keycloak/conf/tls/localhost-cert.pem:ro
-      - /Users/dadaramjadhav/primecart/infra/tls/localhost-key.pem:/opt/keycloak/conf/tls/localhost-key.pem:ro
 
     environment:
       KC_DB: mysql
@@ -24,8 +18,7 @@ services:
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/tls/localhost-cert.pem
-      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/tls/localhost-key.pem
+      KC_HTTP_ENABLED: "true"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"

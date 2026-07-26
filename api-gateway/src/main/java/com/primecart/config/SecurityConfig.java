@@ -22,10 +22,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
-            ServerHttpSecurity http,
-            ReactiveJwtDecoder jwtDecoder,
-            JsonAuthenticationEntryPoint authenticationEntryPoint,
-            JsonAccessDeniedHandler accessDeniedHandler) {
+            ServerHttpSecurity http, ReactiveJwtDecoder jwtDecoder, JsonAuthenticationEntryPoint authenticationEntryPoint,
+            JsonAccessDeniedHandler accessDeniedHandler
+    ) {
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -146,7 +145,10 @@ public class SecurityConfig {
 
                         .pathMatchers(HttpMethod.PUT, "/api/customers/me")
                         .hasRole("PROFILE_UPDATE")
-                        
+
+                        .pathMatchers(HttpMethod.POST, "/api/customers/me")
+                        .hasRole("PROFILE_UPDATE")
+
                         .anyExchange()
                         .authenticated())
 
@@ -161,11 +163,14 @@ public class SecurityConfig {
     public ReactiveJwtDecoder reactiveJwtDecoder(
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
             String issuerUri,
+            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+            String jwkSetUri,
             @Value("${primecart.security.jwt.audience}")
-            String expectedAudience) {
+            String expectedAudience
+    ) {
 
         NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder
-                .withIssuerLocation(issuerUri)
+                .withJwkSetUri(jwkSetUri)
                 .build();
 
         OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuerUri);

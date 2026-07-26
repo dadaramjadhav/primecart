@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 
+import { showError, showSuccess } from "../../../shared/utils/notifications"
+import useCreateCustomer from "../hooks/useCreateCustomer"
 import useCustomer from "../hooks/useCustomer"
 import useUpdateCustomer from "../hooks/useUpdateCustomer"
-import { showError, showSuccess } from "../../../shared/utils/notifications"
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false)
 
   const { customer, isLoading, isError, error, isFetching, refetch } = useCustomer()
-
+  const { createCustomer, isCreating } = useCreateCustomer()
   const { updateCustomer, isUpdating } = useUpdateCustomer()
+  const isSaving = isUpdating || isCreating
 
   const {
     register,
@@ -18,6 +20,9 @@ export default function Profile() {
     reset,
     formState: { errors },
   } = useForm()
+
+  const profileNotFound = isError && error?.response?.data?.code === "CUSTOMER_PROFILE_NOT_FOUND"
+  const formIsEditing = profileNotFound || isEditing
 
   useEffect(() => {
     if (!customer) {
@@ -34,6 +39,23 @@ export default function Profile() {
       phone: customer.phone ?? "",
     })
   }, [customer, reset])
+
+  useEffect(() => {
+    if (!profileNotFound) {
+      return
+    }
+
+    reset({
+      id: "",
+      keycloakUserId: "",
+      username: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+    })
+
+  }, [profileNotFound, reset])
 
   function startEditing() {
     setIsEditing(true)
@@ -54,21 +76,24 @@ export default function Profile() {
   }
 
   async function onSubmit(formData) {
-    // Whitelist only fields that the user may edit.
     const profileData = {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
-      email: formData.email.trim(),
       phone: formData.phone.trim(),
     }
 
     try {
-      await updateCustomer(profileData)
+      if (profileNotFound) {
+        await createCustomer(profileData)
+        showSuccess("Profile created successfully.")
+      } else {
+        await updateCustomer(profileData)
+        showSuccess("Profile updated successfully.")
+      }
 
-      showSuccess("Profile updated successfully.")
       setIsEditing(false)
-    } catch (updateError) {
-      showError(updateError, "Unable to update your profile.")
+    } catch (requestError) {
+      showError(requestError, "Unable to save your profile.")
     }
   }
 
@@ -76,11 +101,11 @@ export default function Profile() {
     return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
   }
 
-  if (isError) {
-    return <div className="p-8 text-center text-destructive">{error?.message ?? "Unable to load profile."}</div>
+  if (isError && !profileNotFound) {
+    return <div>{error?.message ?? "Unable to load profile."}</div>
   }
 
-  if (!customer) {
+  if (!customer && !profileNotFound) {
     return <div className="p-8 text-center text-muted-foreground">Profile not found.</div>
   }
 
@@ -97,7 +122,7 @@ export default function Profile() {
             {isFetching && <p className="text-sm text-muted-foreground">Refreshing profile...</p>}
           </div>
 
-          {!isEditing && (
+          {!formIsEditing && (
             <div className="flex gap-2">
               <button
                 type="button"
@@ -126,7 +151,7 @@ export default function Profile() {
 
           <ProfileField
             label="First Name"
-            readOnly={!isEditing}
+            readOnly={!formIsEditing}
             register={register("firstName", {
               required: "First name is required.",
               maxLength: {
@@ -139,7 +164,7 @@ export default function Profile() {
 
           <ProfileField
             label="Last Name"
-            readOnly={!isEditing}
+            readOnly={!formIsEditing}
             register={register("lastName", {
               required: "Last name is required.",
               maxLength: {
@@ -153,21 +178,14 @@ export default function Profile() {
           <ProfileField
             label="Email"
             type="email"
-            readOnly={!isEditing}
-            register={register("email", {
-              required: "Email is required.",
-              pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: "Enter a valid email address.",
-              },
-            })}
-            error={errors.email?.message}
+            readOnly
+            register={register("email")}
           />
 
           <ProfileField
             label="Phone"
             type="tel"
-            readOnly={!isEditing}
+            readOnly={!formIsEditing}
             register={register("phone", {
               required: "Phone number is required.",
               pattern: {
@@ -179,21 +197,23 @@ export default function Profile() {
           />
         </div>
 
-        {isEditing && (
+        {formIsEditing && (
           <div className="mt-8 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={cancelEditing}
-              disabled={isUpdating}
-              className="rounded-md border px-5 py-2 hover:bg-accent disabled:opacity-50">
-              Cancel
-            </button>
+            {!profileNotFound && (
+              <button
+                type="button"
+                onClick={cancelEditing}
+                disabled={isSaving}
+                className="rounded-md border px-5 py-2 hover:bg-accent disabled:opacity-50">
+                Cancel
+              </button>
+            )}
 
             <button
               type="submit"
-              disabled={isUpdating}
+              disabled={isSaving}
               className="rounded-md bg-primary px-5 py-2 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
-              {isUpdating ? "Saving..." : "Save Changes"}
+              {isSaving ? "Saving..." : profileNotFound ? "Create Profile" : "Save Changes"}
             </button>
           </div>
         )}

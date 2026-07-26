@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+  namespace: primecart-app
+  labels:
+    app.kubernetes.io/name: config-server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: config-server
+  ports:
+    - name: http
+      port: 8888
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: primecart-app
+  labels:
+    app.kubernetes.io/name: config-server
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: config-server
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: config-server
+    spec:
+      securityContext:
+        fsGroup: 999
+
+      containers:
+        - name: config-server
+          image: primecart/config-server:local
+          imagePullPolicy: Never
+
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: -Duser.home=/tmp
+
+            - name: CONFIG_GIT_URI
+              value: https://github.com/dadaramjadhav/primecart-config.git
+
+            - name: CONFIG_GIT_USERNAME
+              value: dadaramjadhav
+
+            - name: CONFIG_GIT_DEFAULT_LABEL
+              value: main
+
+            - name: GITHUB_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: config-server-credentials
+                  key: github-access-token
+
+            - name: SBA_URL
+              value: http://sb-admin-server:9191
+
+            - name: SBA_USERNAME
+              value: admin
+
+            - name: SBA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: config-server-credentials
+                  key: sba-password
+
+            - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL
+              value: http://config-server:8888
+
+            - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL
+              value: http://config-server:8888/actuator
+
+            - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL
+              value: http://config-server:8888/actuator/health
+
+          ports:
+            - name: http
+              containerPort: 8888
+
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: temporary-files
+              mountPath: /tmp
+
+      volumes:
+        - name: temporary-files
+          emptyDir: { }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: config-server
+  namespace: primecart-observe
+  labels:
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - primecart-app
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: config-server
+
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s

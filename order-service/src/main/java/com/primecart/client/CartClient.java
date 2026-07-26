@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @FeignClient(name = "cart-service",
-             url = "http://localhost:8083",
+             url = "${primecart.clients.cart-service.url:http://localhost:8083}",
              configuration = UserTokenFeignConfig.class)
 public interface CartClient {
 

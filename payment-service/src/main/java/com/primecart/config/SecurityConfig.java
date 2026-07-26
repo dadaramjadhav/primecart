@@ -68,11 +68,14 @@ public class SecurityConfig {
     JwtDecoder jwtDecoder(
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
             String issuerUri,
+            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+            String jwkSetUri,
             @Value("${primecart.security.jwt.audience}")
-            String expectedAudience) {
+            String expectedAudience
+    ) {
 
         NimbusJwtDecoder decoder = NimbusJwtDecoder
-                .withIssuerLocation(issuerUri)
+                .withJwkSetUri(jwkSetUri)
                 .build();
 
         OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuerUri);

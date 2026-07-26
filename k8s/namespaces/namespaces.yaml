@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: primecart-infra
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: primecart-observe
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: primecart-app

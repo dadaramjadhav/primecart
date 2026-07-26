@@ -14,19 +14,18 @@ spring:
   boot:
     admin:
       client:
-        url: http://localhost:9191
-        username: admin
+        url: ${SBA_URL:http://localhost:9191}
+        username: ${SBA_USERNAME:admin}
         password: ${SBA_PASSWORD}
 
   cloud:
     config:
       server:
         git:
-          uri: https://github.com/dadaramjadhav/primecart-config.git
-          username: dadaramjadhav
+          uri: ${CONFIG_GIT_URI:https://github.com/dadaramjadhav/primecart-config.git}
+          username: ${CONFIG_GIT_USERNAME:dadaramjadhav}
           password: ${GITHUB_ACCESS_TOKEN}
-
-          default-label: main
+          default-label: ${CONFIG_GIT_DEFAULT_LABEL:main}
           clone-on-start: true
           timeout: 10
 

@@ -1,8 +1,6 @@
 server:
   ssl:
-    enabled: true
-    certificate: file:/Users/dadaramjadhav/primecart/infra/tls/localhost-cert.pem
-    certificate-private-key: file:/Users/dadaramjadhav/primecart/infra/tls/localhost-key.pem
+    enabled: false
 
   error:
     include-message: never
@@ -15,8 +13,8 @@ spring:
     name: api-gateway
 
   config:
-    import: configserver:http://localhost:8888
+    import: ${SPRING_CONFIG_IMPORT:configserver:http://localhost:8888}
 
   cloud:
     config:
-      label: main
+      label: ${CONFIG_GIT_DEFAULT_LABEL:main}

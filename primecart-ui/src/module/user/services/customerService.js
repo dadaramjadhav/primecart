@@ -9,3 +9,8 @@ export async function updateCustomerProfile(profileData) {
 
   return response.data
 }
+
+export async function createCustomerProfile(profileData) {
+  const response = await api.post("/api/customers/me", profileData)
+  return response.data
+}

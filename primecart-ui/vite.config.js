@@ -2,15 +2,7 @@ import {defineConfig} from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import {fileURLToPath, URL} from "node:url"
-import fs from "node:fs"
 
-const certificatePath = fileURLToPath(
-    new URL("../devops/tls/localhost-cert.pem", import.meta.url),
-)
-
-const privateKeyPath = fileURLToPath(
-    new URL("../devops/tls/localhost-key.pem", import.meta.url),
-)
 
 const developmentCsp = [
     "default-src 'self'",
@@ -18,16 +10,15 @@ const developmentCsp = [
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https: data:",
     "font-src 'self' data:",
-    "connect-src 'self' https://localhost:8181 https://localhost:8443 wss://localhost:5173",
-    "frame-src https://localhost:8443",
+    "connect-src 'self' http://localhost:8181 http://localhost:8080 ws://localhost:5173",
+    "frame-src http://localhost:8080",
+    "form-action 'self' http://localhost:8080",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self' https://localhost:8443",
     "frame-ancestors 'none'",
 ].join("; ")
 
-export default defineConfig(({command}) => {
-    const isDevelopmentServer = command === "serve"
+export default defineConfig(() => {
 
     return {
         plugins: [react(), tailwindcss()],
@@ -39,12 +30,6 @@ export default defineConfig(({command}) => {
         },
 
         server: {
-            https: isDevelopmentServer
-                ? {
-                    cert: fs.readFileSync(certificatePath),
-                    key: fs.readFileSync(privateKeyPath),
-                }
-                : undefined,
 
             headers: {
                 "Content-Security-Policy-Report-Only": developmentCsp,
@@ -58,51 +43,3 @@ export default defineConfig(({command}) => {
         },
     }
 })
-
-// import { defineConfig } from "vite"
-// import react from "@vitejs/plugin-react"
-// import tailwindcss from "@tailwindcss/vite"
-// import { fileURLToPath, URL } from "node:url"
-// import fs from "node:fs"
-//
-// const certificatePath = fileURLToPath(new URL("../devops/tls/localhost-cert.pem", import.meta.url))
-//
-// const privateKeyPath = fileURLToPath(new URL("../devops/tls/localhost-key.pem", import.meta.url))
-//
-// const developmentCsp = [
-//   "default-src 'self'",
-//   "script-src 'self'",
-//   "style-src 'self' 'unsafe-inline'",
-//   "img-src 'self' https: data:",
-//   "font-src 'self' data:",
-//   "connect-src 'self' https://localhost:8181 https://localhost:8443 wss://localhost:5173",
-//   "frame-src https://localhost:8443",
-//   "object-src 'none'",
-//   "base-uri 'self'",
-//   "form-action 'self' https://localhost:8443",
-//   "frame-ancestors 'none'",
-// ].join("; ")
-//
-// export default defineConfig({
-//   plugins: [react(), tailwindcss()],
-//   resolve: {
-//     alias: {
-//       "@": fileURLToPath(new URL("./src", import.meta.url)),
-//     },
-//   },
-//   server: {
-//     https: {
-//       cert: fs.readFileSync(certificatePath),
-//       key: fs.readFileSync(privateKeyPath),
-//     },
-//     headers: {
-//       "Content-Security-Policy-Report-Only": developmentCsp,
-//     },
-//   },
-//
-//   preview: {
-//     headers: {
-//       "Content-Security-Policy-Report-Only": developmentCsp,
-//     },
-//   },
-// })

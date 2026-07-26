@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sb-admin-server
+  namespace: primecart-app
+  labels:
+    app.kubernetes.io/name: sb-admin-server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: sb-admin-server
+  ports:
+    - name: http
+      port: 9191
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sb-admin-server
+  namespace: primecart-app
+  labels:
+    app.kubernetes.io/name: sb-admin-server
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sb-admin-server
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sb-admin-server
+    spec:
+      securityContext:
+        fsGroup: 999
+
+      containers:
+        - name: sb-admin-server
+          image: primecart/sb-admin-server:local
+          imagePullPolicy: Never
+
+          env:
+            - name: SBA_USERNAME
+              value: admin
+
+            - name: SBA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: config-server-credentials
+                  key: sba-password
+
+            - name: JAVA_TOOL_OPTIONS
+              value: -Duser.home=/tmp
+
+          ports:
+            - name: http
+              containerPort: 9191
+
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: temporary-files
+              mountPath: /tmp
+
+      volumes:
+        - name: temporary-files
+          emptyDir: { }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sb-admin-server
+  namespace: primecart-observe
+  labels:
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - primecart-app
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sb-admin-server
+
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s

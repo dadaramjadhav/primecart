@@ -5,6 +5,7 @@ import com.primecart.dto.response.CustomerProfileResponse;
 import com.primecart.service.CustomerProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,23 @@ public class CustomerProfileController {
     @GetMapping("/me")
     public CustomerProfileResponse getMyProfile(
             @AuthenticationPrincipal
-            Jwt jwt) {
+            Jwt jwt
+    ) {
 
         return customerProfileService.getProfile(jwt);
+    }
+
+    @PostMapping("/me")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CustomerProfileResponse createMyProfile(
+            @AuthenticationPrincipal
+            Jwt jwt,
+            @Valid
+            @RequestBody
+            UpdateCustomerProfileRequest request
+    ) {
+
+        return customerProfileService.createProfile(jwt, request);
     }
 
     @PutMapping("/me")
@@ -30,7 +45,8 @@ public class CustomerProfileController {
             Jwt jwt,
             @Valid
             @RequestBody
-            UpdateCustomerProfileRequest request) {
+            UpdateCustomerProfileRequest request
+    ) {
 
         return customerProfileService.updateProfile(jwt, request);
     }

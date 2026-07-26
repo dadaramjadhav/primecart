@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: primecart-ui
+  namespace: primecart-app
+spec:
+  selector:
+    app.kubernetes.io/name: primecart-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: primecart-ui
+  namespace: primecart-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: primecart-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: primecart-ui
+    spec:
+      containers:
+        - name: primecart-ui
+          image: primecart/primecart-ui:local-v3
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

@@ -4,23 +4,23 @@ server:
     include-binding-errors: never
     include-stacktrace: never
     include-exception: false
-    
+
 spring:
   application:
     name: product-service
 
   config:
-    import: configserver:http://localhost:8888
+    import: ${SPRING_CONFIG_IMPORT:configserver:http://localhost:8888}
 
   cloud:
     config:
-      label: main
+      label: ${CONFIG_GIT_DEFAULT_LABEL:main}
 
 primecart:
   storage:
     endpoint: ""
-    region: eu-north-1
-    bucket: primecart-products
+    region: ${AWS_REGION:eu-north-1}
+    bucket: ${AWS_S3_BUCKET:primecart-products}
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
     path-style-access: false

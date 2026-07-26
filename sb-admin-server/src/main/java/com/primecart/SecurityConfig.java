@@ -31,10 +31,12 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(adminContextPath + "/assets/**", adminContextPath + "/login")
+                        .requestMatchers(adminContextPath + "/assets/**", adminContextPath + "/login", "/actuator/health",
+                                         "/actuator/health/**", "/actuator/info", "/actuator/prometheus")
                         .permitAll()
                         .anyRequest()
                         .authenticated())
+
                 .formLogin(form -> form
                         .loginPage(adminContextPath + "/login")
                         .successHandler(successHandler))
