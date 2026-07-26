@@ -41,7 +41,6 @@ dependency-reduced-pom.xml
 *.tsbuildinfo
 
 # IDEs and editors
-.idea/
 **/.idea/
 *.iml
 *.iws
@@ -50,6 +49,15 @@ dependency-reduced-pom.xml
 *.swp
 *.swo
 *~
+
+# Share IntelliJ formatting and inspection settings only
+!.idea/
+.idea/*
+!.idea/.gitignore
+!.idea/codeStyles/
+!.idea/codeStyles/**
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/**
 
 # Operating-system files
 .DS_Store
@@ -131,7 +139,6 @@ pnpm-debug.log*
 
 # IDE
 .vscode/
-.idea/
 
 # OS files
 .DS_Store
