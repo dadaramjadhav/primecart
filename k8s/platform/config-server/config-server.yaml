@@ -38,7 +38,7 @@ spec:
 
       containers:
         - name: config-server
-          image: dadaramjadhav/primecart-config-server:8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+          image: dadaramjadhav/primecart-config-server
           imagePullPolicy: IfNotPresent
 
           env:

@@ -123,7 +123,7 @@ and Git SHA tag.
 Update every overlay image tag using one full, 40-character CI commit SHA:
 
 ```bash
-./scripts/update-app-version.sh \
+./scripts/apps/update-app-version.sh \
   d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
 ```
 
@@ -141,7 +141,7 @@ This command only updates the Kustomize file. It does not deploy anything.
 Create or update all backend resources from the overlay and apply PrimeCart UI:
 
 ```bash
-./scripts/deploy-primecart-apps.sh
+./scripts/apps/deploy-primecart-apps.sh
 ```
 
 Equivalent commands:
@@ -157,13 +157,13 @@ kubectl apply \
 Wait for every application:
 
 ```bash
-./scripts/wait-primecart-apps.sh
+./scripts/apps/wait-primecart-apps.sh
 ```
 
 Use a longer timeout when Docker Desktop is pulling or emulating images:
 
 ```bash
-TIMEOUT=15m ./scripts/wait-primecart-apps.sh
+TIMEOUT=15m ./scripts/apps/wait-primecart-apps.sh
 ```
 
 ## Restart applications
@@ -171,7 +171,7 @@ TIMEOUT=15m ./scripts/wait-primecart-apps.sh
 Restart the application pods without deleting Deployments or Services:
 
 ```bash
-./scripts/restart-primecart-apps.sh
+./scripts/apps/restart-primecart-apps.sh
 ```
 
 A rollout restart preserves Services, so an active port-forward normally
@@ -183,7 +183,7 @@ Scale application Deployments to zero while keeping their Kubernetes
 resources:
 
 ```bash
-./scripts/stop-primecart-apps.sh
+./scripts/apps/stop-primecart-apps.sh
 ```
 
 Scaling to zero is preferred for routine local shutdown because Deployments,
@@ -192,7 +192,7 @@ Services, configuration, and port-forward targets remain defined.
 Start the stopped Deployments again:
 
 ```bash
-./scripts/deploy-primecart-apps.sh
+./scripts/apps/deploy-primecart-apps.sh
 ```
 
 ## Delete applications
@@ -200,14 +200,14 @@ Start the stopped Deployments again:
 Delete all application resources only when a clean recreation is required:
 
 ```bash
-./scripts/delete-primecart-apps.sh
+./scripts/apps/delete-primecart-apps.sh
 ```
 
 Recreate them:
 
 ```bash
-./scripts/deploy-primecart-apps.sh
-./scripts/wait-primecart-apps.sh
+./scripts/apps/deploy-primecart-apps.sh
+./scripts/apps/wait-primecart-apps.sh
 ```
 
 Deleting Services terminates their existing `kubectl port-forward` processes.
@@ -260,16 +260,16 @@ Do not delete the Deployment merely to resolve `ImagePullBackOff`. Correct the
 image name or tag, then apply the overlay again:
 
 ```bash
-./scripts/deploy-primecart-apps.sh
+./scripts/apps/deploy-primecart-apps.sh
 ```
 
 ## Recommended deployment workflow
 
 ```bash
-./scripts/update-app-version.sh <40-character-git-sha>
+./scripts/apps/update-app-version.sh <40-character-git-sha>
 kubectl kustomize k8s/overlays/local/applications
-./scripts/deploy-primecart-apps.sh
-./scripts/wait-primecart-apps.sh
+./scripts/apps/deploy-primecart-apps.sh
+./scripts/apps/wait-primecart-apps.sh
 ./scripts/primecart-port-forward.sh
 ./scripts/sanity-check.sh
 ```

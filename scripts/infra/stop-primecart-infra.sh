@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "Stopping PrimeCart infrastructure..."
 
 kubectl scale deployments,statefulsets \
@@ -18,11 +20,7 @@ kubectl scale deployments,statefulsets \
 
 echo "Stopping PrimeCart platform services..."
 
-kubectl scale deployment \
-  config-server \
-  sb-admin-server \
-  --replicas=0 \
-  --namespace primecart-app
+"${SCRIPT_DIR}/../platform/stop-platform.sh"
 
 echo "PrimeCart infrastructure stopped. Persistent data is preserved."
 

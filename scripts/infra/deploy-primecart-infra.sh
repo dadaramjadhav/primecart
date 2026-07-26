@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 TIMEOUT="${TIMEOUT:-15m}"
 
 cd "${PROJECT_ROOT}"
@@ -106,13 +106,7 @@ kubectl rollout status deployment/logstash \
 
 echo "Deploying platform services..."
 
-kubectl apply --filename k8s/platform/config-server/config-server.yaml
-kubectl rollout status deployment/config-server \
-  --namespace primecart-app --timeout="${TIMEOUT}"
-
-kubectl apply --filename k8s/platform/sb-admin-server/sb-admin-server.yaml
-kubectl rollout status deployment/sb-admin-server \
-  --namespace primecart-app --timeout="${TIMEOUT}"
+TIMEOUT="${TIMEOUT}" "${SCRIPT_DIR}/../platform/deploy-platform.sh"
 
 echo "PrimeCart infrastructure, observability, and platform are ready."
 
