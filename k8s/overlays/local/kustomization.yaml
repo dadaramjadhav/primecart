@@ -4,3 +4,10 @@ kind: Kustomization
 resources:
   - applications
   - platform
+  - ingress
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: local
+    includeSelectors: false
+    includeTemplates: true
