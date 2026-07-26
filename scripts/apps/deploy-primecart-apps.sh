@@ -7,10 +7,8 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 echo "Deploying PrimeCart applications..."
 
-kubectl apply \
-  --kustomize "${PROJECT_ROOT}/k8s/overlays/local/applications"
+kubectl apply --kustomize "${PROJECT_ROOT}/k8s/overlays/local/applications"
 
-kubectl get deployments,pods \
-  --namespace primecart-app
+kubectl get deployments,pods  --namespace primecart-app
 
 echo "PrimeCart applications deployed."

@@ -1,20 +1,5 @@
 k8s pending topics
 
-1. Full lifecycle validation
-Backup
-Stop
-Fresh deployment
-Port-forward
-Sanity check
-Restore testing
-2. Basic Ingress
-Ingress concepts
-NGINX Ingress
-UI routing
-API Gateway routing
-Keycloak routing
-Local DNS names
-Reduce port-forwarding
 3. Basic HTTPS
 HTTPS concept
 Local TLS certificate

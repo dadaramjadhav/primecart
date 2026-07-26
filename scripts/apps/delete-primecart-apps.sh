@@ -13,5 +13,4 @@ kubectl delete \
 
 echo "PrimeCart applications deleted."
 
-kubectl get deployments \
-  --namespace primecart-app
+kubectl get deployments --namespace primecart-app
