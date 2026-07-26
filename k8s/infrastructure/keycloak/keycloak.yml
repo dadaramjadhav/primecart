@@ -42,8 +42,11 @@ spec:
           env:
 
             - name: KC_HOSTNAME
-              value: http://localhost:8080
-              
+              value: http://auth.primecart.localhost
+
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+
             - name: KC_BOOTSTRAP_ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:

@@ -94,7 +94,7 @@ spec:
                   key: redis-password
 
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-              value: http://localhost:8080/realms/primecart
+              value: http://auth.primecart.localhost/realms/primecart
 
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
               value: http://keycloak.primecart-infra:8080/realms/primecart/protocol/openid-connect/certs
