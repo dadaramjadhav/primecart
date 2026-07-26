@@ -13,25 +13,25 @@ resources:
 
 images:
   - name: dadaramjadhav/primecart-api-gateway
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-cart-service
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-customer-service
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-inventory-service
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-order-service
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-payment-service
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-product-service
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-ui
-    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+    newTag: c136f180f8e38de6eede3c528cc13510b1d07e66
