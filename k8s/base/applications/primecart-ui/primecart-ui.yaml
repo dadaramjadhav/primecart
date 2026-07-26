@@ -28,8 +28,8 @@ spec:
     spec:
       containers:
         - name: primecart-ui
-          image: primecart/primecart-ui:local-v3
-          imagePullPolicy: Never
+          image: dadaramjadhav/primecart-ui
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 80

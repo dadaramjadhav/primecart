@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/applications/api-gateway
+  - ../../../base/applications/cart-service
+  - ../../../base/applications/customer-service
+  - ../../../base/applications/inventory-service
+  - ../../../base/applications/order-service
+  - ../../../base/applications/payment-service
+  - ../../../base/applications/product-service
+  - ../../../base/applications/primecart-ui
+
+images:
+  - name: dadaramjadhav/primecart-api-gateway
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-cart-service
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-customer-service
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-inventory-service
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-order-service
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-payment-service
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-product-service
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b
+
+  - name: dadaramjadhav/primecart-ui
+    newTag: d8f0ab7f5b31c2156fd8ac7a4b1274be3bfb011b

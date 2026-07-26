@@ -1,87 +1,105 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: customer-service
+  name: api-gateway
   namespace: primecart-app
   labels:
-    app.kubernetes.io/name: customer-service
+    app.kubernetes.io/name: api-gateway
 spec:
   selector:
-    app.kubernetes.io/name: customer-service
+    app.kubernetes.io/name: api-gateway
   ports:
     - name: http
-      port: 8086
+      port: 8181
       targetPort: http
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: customer-service
+  name: api-gateway
   namespace: primecart-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: customer-service
+      app.kubernetes.io/name: api-gateway
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: customer-service
+        app.kubernetes.io/name: api-gateway
     spec:
       containers:
-        - name: customer-service
-          image: primecart/customer-service:local-v1
-          imagePullPolicy: Never
+        - name: api-gateway
+          image: dadaramjadhav/primecart-api-gateway
+          imagePullPolicy: IfNotPresent
           env:
             - name: JAVA_TOOL_OPTIONS
               value: -Duser.home=/tmp
+
             - name: SPRING_CONFIG_IMPORT
               value: configserver:http://config-server:8888
-            - name: CONFIG_GIT_DEFAULT_LABEL
-              value: main
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql.primecart-infra:3306/customer
-            - name: SPRING_DATASOURCE_USERNAME
-              value: primecart
-            - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-credentials
-                  key: mysql-password
+
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
               value: http://localhost:8080/realms/primecart
+
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
               value: http://keycloak.primecart-infra:8080/realms/primecart/protocol/openid-connect/certs
+
+            - name: SPRING_DATA_REDIS_HOST
+              value: redis.primecart-infra
+
+            - name: SPRING_DATA_REDIS_PORT
+              value: "6379"
+
+            - name: SPRING_DATA_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-credentials
+                  key: redis-password
+
             - name: SPRING_BOOT_ADMIN_CLIENT_URL
               value: http://sb-admin-server:9191
+
             - name: SPRING_BOOT_ADMIN_CLIENT_USERNAME
               value: admin
+
             - name: SPRING_BOOT_ADMIN_CLIENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: config-server-credentials
                   key: sba-password
+
             - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL
-              value: http://customer-service:8086
+              value: http://api-gateway:8181
+
             - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL
-              value: http://customer-service:8086/actuator
+              value: http://api-gateway:8181/actuator
+
             - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL
-              value: http://customer-service:8086/actuator/health
+              value: http://api-gateway:8181/actuator/health
+
             - name: OTEL_SERVICE_NAME
-              value: customer-service
+              value: api-gateway
+
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.primecart-observe:4318
+
             - name: OTEL_EXPORTER_OTLP_PROTOCOL
               value: http/protobuf
+
             - name: MANAGEMENT_OTLP_TRACING_ENDPOINT
               value: http://otel-collector.primecart-observe:4318/v1/traces
+
             - name: LOGSTASH_DESTINATION
               value: logstash.primecart-observe:5000
+
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
               value: "true"
+
           ports:
             - name: http
-              containerPort: 8086
+              containerPort: 8181
+
           startupProbe:
             httpGet:
               path: /actuator/health
@@ -89,6 +107,7 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 30
+
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -129,7 +148,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: customer-service
+  name: api-gateway
   namespace: primecart-observe
   labels:
     release: monitoring
@@ -137,9 +156,11 @@ spec:
   namespaceSelector:
     matchNames:
       - primecart-app
+
   selector:
     matchLabels:
-      app.kubernetes.io/name: customer-service
+      app.kubernetes.io/name: api-gateway
+
   endpoints:
     - port: http
       path: /actuator/prometheus

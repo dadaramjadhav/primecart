@@ -138,3 +138,4 @@ pnpm-debug.log*
 Thumbs.db
 
 /backups/keycloak/*-realm.json
+/backups/primecart-*/
