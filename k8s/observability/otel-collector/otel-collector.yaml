@@ -23,13 +23,35 @@ data:
         limit_mib: 384
         spike_limit_mib: 64
 
-      filter/drop_actuator:
-        error_mode: ignore
-        traces:
-          span:
-            - 'IsMatch(attributes["http.route"], "^/actuator(/.*)?$")'
-            - 'IsMatch(attributes["url.path"], "^/actuator(/.*)?$")'
-            - 'IsMatch(attributes["http.target"], "^/actuator(/.*)?$")'
+      tail_sampling/drop_actuator:
+        decision_wait: 5s
+        num_traces: 10000
+        expected_new_traces_per_sec: 100
+        decision_cache:
+          sampled_cache_size: 10000
+          non_sampled_cache_size: 10000
+        policies:
+          - name: drop-actuator
+            type: drop
+            drop:
+              drop_sub_policy:
+                - name: actuator-uri
+                  type: string_attribute
+                  string_attribute:
+                    key: uri
+                    values:
+                      - '^/actuator(/.*)?$'
+                    enabled_regex_matching: true
+                - name: actuator-http-url
+                  type: string_attribute
+                  string_attribute:
+                    key: http.url
+                    values:
+                      - '^/actuator(/.*)?$'
+                    enabled_regex_matching: true
+          - name: keep-all
+            type: always_sample
+
       batch:
         timeout: 5s
         send_batch_size: 1024
@@ -58,7 +80,7 @@ data:
             - otlp
           processors:
             - memory_limiter
-            - filter/drop_actuator
+            - tail_sampling/drop_actuator
             - batch
           exporters:
             - otlp/tempo

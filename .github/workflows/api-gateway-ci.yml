@@ -17,6 +17,7 @@ on:
       - ".github/workflows/api-gateway-ci.yml"
       - ".github/workflows/reusable-java-service-ci.yml"
 
+
   workflow_dispatch:
 
 permissions:
