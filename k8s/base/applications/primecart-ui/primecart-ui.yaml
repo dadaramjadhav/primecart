@@ -18,6 +18,13 @@ metadata:
   namespace: primecart-app
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  minReadySeconds: 10
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
       app.kubernetes.io/name: primecart-ui
@@ -30,20 +37,40 @@ spec:
         - name: primecart-ui
           image: dadaramjadhav/primecart-ui
           imagePullPolicy: IfNotPresent
+
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 10" ]
+
           ports:
             - name: http
               containerPort: 80
+
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
           readinessProbe:
             httpGet:
               path: /
               port: http
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
           livenessProbe:
             httpGet:
               path: /
               port: http
             initialDelaySeconds: 10
             periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m
@@ -51,3 +78,38 @@ spec:
             limits:
               cpu: 250m
               memory: 256Mi
+
+      terminationGracePeriodSeconds: 45
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: primecart-ui
+  namespace: primecart-app
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: primecart-ui
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: primecart-ui
+  namespace: primecart-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: primecart-ui
+  minReplicas: 1
+  maxReplicas: 1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

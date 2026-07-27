@@ -23,6 +23,13 @@ data:
         limit_mib: 384
         spike_limit_mib: 64
 
+      filter/drop_actuator:
+        error_mode: ignore
+        traces:
+          span:
+            - 'IsMatch(attributes["http.route"], "^/actuator(/.*)?$")'
+            - 'IsMatch(attributes["url.path"], "^/actuator(/.*)?$")'
+            - 'IsMatch(attributes["http.target"], "^/actuator(/.*)?$")'
       batch:
         timeout: 5s
         send_batch_size: 1024
@@ -51,6 +58,7 @@ data:
             - otlp
           processors:
             - memory_limiter
+            - filter/drop_actuator
             - batch
           exporters:
             - otlp/tempo

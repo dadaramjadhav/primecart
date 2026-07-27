@@ -20,6 +20,13 @@ metadata:
   namespace: primecart-app
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  minReadySeconds: 10
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
       app.kubernetes.io/name: inventory-service
@@ -118,13 +125,18 @@ spec:
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
               value: "true"
 
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 10" ]
+
           ports:
             - name: http
               containerPort: 8084
 
           startupProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/liveness
               port: http
             initialDelaySeconds: 20
             periodSeconds: 10
@@ -167,6 +179,9 @@ spec:
             - name: temporary-files
               mountPath: /tmp
 
+
+      terminationGracePeriodSeconds: 45
+
       volumes:
         - name: temporary-files
           emptyDir: { }
@@ -191,3 +206,36 @@ spec:
       path: /actuator/prometheus
       interval: 15s
       scrapeTimeout: 10s
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inventory-service
+  namespace: primecart-app
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inventory-service
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inventory-service
+  namespace: primecart-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inventory-service
+  minReplicas: 1
+  maxReplicas: 1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
