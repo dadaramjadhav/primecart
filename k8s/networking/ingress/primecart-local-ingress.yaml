@@ -257,3 +257,55 @@ spec:
                 name: sb-admin-server
                 port:
                   name: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rabbitmq
+  namespace: primecart-infra
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - rabbitmq.primecart.localhost
+      secretName: primecart-local-tls
+  rules:
+    - host: rabbitmq.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq
+                port:
+                  name: management
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redis-insight
+  namespace: primecart-infra
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - redis.primecart.localhost
+      secretName: primecart-local-tls
+  rules:
+    - host: redis.primecart.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: redis-insight
+                port:
+                  number: 5540

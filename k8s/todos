@@ -1,0 +1,25 @@
+Main remaining Kubernetes work:
+•
+Apply and verify the new RabbitMQ and Redis Insight Ingress resources.
+•
+Add NetworkPolicies between application, infrastructure, and observability namespaces.
+•
+Create dedicated application ServiceAccounts and disable unnecessary token mounting.
+•
+Replace latest and untagged images with pinned versions/digests.
+•
+Add proper dev/prod ingress domains, TLS and environment-specific Keycloak issuers.
+•
+Add production-specific replicas, HPA limits, PDBs and resource values.
+•
+Automate database/PVC backups, retention and restore testing.
+•
+Add application-specific Grafana dashboards and Prometheus alerts.
+•
+Complete Grafana log-to-trace navigation.
+•
+Move local TLS secret creation to a repeatable secret-management process.
+•
+Add CI validation for Kustomize rendering, schema checks and security policies.
+•
+Perform complete rolling-update, rollback, autoscaling and failure-recovery tests

@@ -1,9 +1,0 @@
-11. Basic GitHub Actions CD
-workflow_dispatch
-Environment selection
-Image verification
-Kustomize rendering
-Deployment
-Rollout checks
-Sanity checks
-Basic rollback

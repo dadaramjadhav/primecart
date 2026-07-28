@@ -13,7 +13,7 @@ resources:
 
 images:
   - name: dadaramjadhav/primecart-api-gateway
-    newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
+    newTag: 126fcec250a2fc5ebb3cf4cbbdeab705062e828b
 
   - name: dadaramjadhav/primecart-cart-service
     newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
@@ -34,4 +34,4 @@ images:
     newTag: 8df8b612b2952f693e331f56202f9f9ae3d5a6f1
 
   - name: dadaramjadhav/primecart-ui
-    newTag: 2b2ae30de3dcfb68f2b79dafc5d3ddc6dd70f045
+    newTag: 126fcec250a2fc5ebb3cf4cbbdeab705062e828b
